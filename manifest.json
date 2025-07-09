@@ -1,0 +1,8 @@
+{
+  "name": "variables-to-code",
+  "id": "variables-to-code",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/index.html",
+  "editorType": ["figma"]
+}
