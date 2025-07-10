@@ -9,7 +9,7 @@ export default defineConfig({
   build: {
     target: "esnext",
     minify: "esbuild",
-    outDir: "dist",
+    outDir: "../../dist",
     rollupOptions: {
       output: {
         inlineDynamicImports: true,
