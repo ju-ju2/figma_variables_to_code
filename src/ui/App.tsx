@@ -1,10 +1,10 @@
 import "./index.css";
-import { Button } from "@/components/ui/button";
+import PullRequest from "./PullRequest";
 
 function App() {
   return (
     <>
-      <Button>sdsd</Button>
+      <PullRequest />
     </>
   );
 }
