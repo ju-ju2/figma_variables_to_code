@@ -83,7 +83,10 @@ export const getVariablesStyles = async () => {
     }
 
     // [3] Number / String
-    if (typeof value === "number") return `${value}px`;
+    if (typeof value === "number") {
+      const isOpacity = variable.name.toLocaleLowerCase().includes("opacity");
+      return isOpacity ? `${value / 100}` : `${value}px`;
+    }
     if (typeof value === "string") return value;
 
     return "undefined";
