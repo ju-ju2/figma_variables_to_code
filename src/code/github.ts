@@ -19,18 +19,6 @@ export const commitMultipleFilesToGithub = async (
   const GITHUB_API = "https://api.github.com";
   const [owner, repo] = repoUrl.split("/").slice(-2);
 
-  console.log("🚀 Start GitHub commit process...");
-  console.log(
-    "👉 Owner:",
-    owner,
-    "Repo:",
-    repo,
-    "Base:",
-    BASE_BRANCH,
-    "Target:",
-    TARGET_BRANCH
-  );
-
   try {
     // ✅ Step 1: 기준 브랜치 (dev)의 SHA 가져오기
     const baseRefRes = await fetch(
@@ -182,17 +170,20 @@ export const commitMultipleFilesToGithub = async (
         const existing: repoInfoType[] =
           (await figma.clientStorage.getAsync("repoInfo")) ?? [];
 
-        const updated = existing.filter(
-          (item) => item.fileName !== figma.root.name
-        );
+        const updated = existing.filter((item) => {
+          return item.fileName !== figma.root.name;
+        });
         await figma.clientStorage.setAsync("repoInfo", updated);
       } catch (err) {
         console.log("⚠️ deleteRepoInfo Error:", err);
       }
     };
 
-    if (isRememberInfo) await setRepoInfo();
-    else await deleteRepoInfo();
+    if (isRememberInfo) {
+      await setRepoInfo();
+    } else {
+      await deleteRepoInfo();
+    }
 
     return { success: true, commitSha: newCommitSha };
   } catch (err) {

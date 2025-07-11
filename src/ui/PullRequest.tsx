@@ -12,7 +12,6 @@ const PullRequest = () => {
       name: "PULL_REQUEST_SCSS",
       payload: {
         ...state,
-        githubRepositoryUrl: state.githubRepositoryUrl,
       },
     });
   };
@@ -31,6 +30,7 @@ const PullRequest = () => {
             payload: { githubRepositoryUrl: e.target.value },
           });
         }}
+        value={state.githubRepositoryUrl}
       />
       <Label htmlFor="token">
         Github Access Token<span className="text-red-400">*</span>
@@ -46,6 +46,7 @@ const PullRequest = () => {
             payload: { githubAccessToken: e.target.value },
           });
         }}
+        value={state.githubAccessToken}
       />
       <div className="flex items-center gap-2">
         <Checkbox

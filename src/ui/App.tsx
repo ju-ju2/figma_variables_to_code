@@ -38,7 +38,7 @@ function App() {
         });
         dispatch({
           name: "GET_GITHUB_REPO_URL",
-          payload: { githubRepositoryUrl: message.payload.repoName },
+          payload: { githubRepositoryUrl: message.payload.repoUrl },
         });
         dispatch({
           name: "IS_REMEMBER_API_KEY",
