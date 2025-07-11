@@ -12,23 +12,23 @@ import {
 } from "../common/fromPlugin";
 
 type State = {
-  gitlabRepositoryUrl: string;
-  gitlabAccessToken: string;
+  githubRepositoryUrl: string;
+  githubAccessToken: string;
   scss: ScssType;
   commitTitle: string;
   isRememberInfo?: boolean;
 };
 
 type Action =
-  | { name: "GET_GITLAB_REPO_URL"; payload: { gitlabRepositoryUrl: string } }
+  | { name: "GET_GITHUB_REPO_URL"; payload: { githubRepositoryUrl: string } }
   | {
-      name: "GET_GITLAB_ACCESS_TOKEN";
-      payload: { gitlabAccessToken: string };
+      name: "GET_GITHUB_ACCESS_TOKEN";
+      payload: { githubAccessToken: string };
     }
-  | Omit<Events["MERGE_REQUEST_SCSS"], "handler">
+  | Omit<Events["PULL_REQUEST_SCSS"], "handler">
   | Omit<Events["GET_SCSS_PREVIEW"], "handler">
   | {
-      name: "GET_GITLAB_COMMIT_TITLE";
+      name: "GET_GITHUB_COMMIT_TITLE";
       payload: { commitTitle: string };
     }
   | {
@@ -49,8 +49,8 @@ const initScss: ActionsType = {
 
 // 초기 상태
 const initialState: State = {
-  gitlabRepositoryUrl: "",
-  gitlabAccessToken: "",
+  githubRepositoryUrl: "",
+  githubAccessToken: "",
   scss: {
     localStyles: initScss,
     variables: [initScss],
@@ -62,18 +62,18 @@ const initialState: State = {
 // 리듀서 함수
 function reducer(state: State, action: Action) {
   switch (action.name) {
-    case "GET_GITLAB_REPO_URL":
+    case "GET_GITHUB_REPO_URL":
       return {
         ...state,
-        gitlabRepositoryUrl: action.payload.gitlabRepositoryUrl,
+        githubRepositoryUrl: action.payload.githubRepositoryUrl,
       };
-    case "GET_GITLAB_ACCESS_TOKEN":
+    case "GET_GITHUB_ACCESS_TOKEN":
       return {
         ...state,
-        gitlabAccessToken: action.payload.gitlabAccessToken,
+        githubAccessToken: action.payload.githubAccessToken,
       };
-    case "MERGE_REQUEST_SCSS":
-      emit("MERGE_REQUEST_SCSS", { ...action.payload, scss: state.scss });
+    case "PULL_REQUEST_SCSS":
+      emit("PULL_REQUEST_SCSS", { ...action.payload, scss: state.scss });
       return {
         ...state,
       };
@@ -82,7 +82,7 @@ function reducer(state: State, action: Action) {
         ...state,
         scss: action.payload.scss,
       };
-    case "GET_GITLAB_COMMIT_TITLE":
+    case "GET_GITHUB_COMMIT_TITLE":
       return {
         ...state,
         commitTitle: action.payload.commitTitle,

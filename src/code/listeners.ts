@@ -3,18 +3,18 @@ import { createGithubClient } from "./github";
 
 export function listenDeployScss() {
   on(
-    "MERGE_REQUEST_SCSS",
+    "PULL_REQUEST_SCSS",
     async ({
-      gitlabRepositoryUrl,
-      gitlabAccessToken,
+      githubRepositoryUrl,
+      githubAccessToken,
       scss,
       commitTitle,
       isRememberInfo,
     }) => {
       try {
         const { createDeployMR } = await createGithubClient(
-          gitlabRepositoryUrl,
-          gitlabAccessToken,
+          githubRepositoryUrl,
+          githubAccessToken,
           scss,
           commitTitle,
           isRememberInfo
@@ -22,10 +22,10 @@ export function listenDeployScss() {
         await createDeployMR();
 
         figma.closePlugin();
-        figma.notify("Scss Merge Request", { timeout: 5000 });
+        figma.notify("Scss Pull Request", { timeout: 5000 });
       } catch (err) {
         console.log("err", err);
-        figma.notify("Scss Merge Request Failed", { timeout: 5000 });
+        figma.notify("Scss Pull Request Failed", { timeout: 5000 });
       }
     }
   );

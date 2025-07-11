@@ -140,7 +140,7 @@ export const createGithubClient = async (
     //   action: "create",
     // });
 
-    // const response = await fetch(`${GITLAB_API_URL}/repository/commits`, {
+    // const response = await fetch(`${GITHUB_API_URL}/repository/commits`, {
     //   method: "POST",
     //   headers: {
     //     Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -182,7 +182,7 @@ export const createGithubClient = async (
         }),
       }
     );
-    // const response = await fetch(`${GITLAB_API_URL}/merge_requests`, {
+    // const response = await fetch(`${GITHUB_API_URL}/merge_requests`, {
     //   method: "POST",
     //   headers: {
     //     Authorization: `Bearer ${GITHUB_TOKEN}`,
