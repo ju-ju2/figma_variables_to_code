@@ -13,7 +13,7 @@ export function listenDeployScss() {
       isRememberInfo,
     }) => {
       try {
-        await commitMultipleFilesToGithub(
+        const result = await commitMultipleFilesToGithub(
           githubRepositoryUrl,
           githubAccessToken,
           commitTitle,
@@ -22,11 +22,16 @@ export function listenDeployScss() {
           isRememberInfo
         );
 
-        figma.closePlugin();
-        figma.notify("Scss Pull Request", { timeout: 5000 });
+        if (result.success) {
+          figma.closePlugin();
+          figma.notify("✅ Pull Request 성공", { timeout: 5000 });
+        } else {
+          console.error("❌ Pull Request 실패:", result.error);
+          figma.notify("❌ Pull Request 실패", { timeout: 5000 });
+        }
       } catch (err) {
-        console.log("err", err);
-        figma.notify("Scss Pull Request Failed", { timeout: 5000 });
+        console.log("🔥 예외 발생:", err);
+        figma.notify("❌  Pull Request 예외 발생", { timeout: 5000 });
       }
     }
   );
