@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BASE_BRANCH, COMMIT_TITLE } from "@/constants/github";
 import { useAppState } from "@/contexts/AppContext";
 
 const PullRequest = () => {
@@ -64,11 +65,22 @@ const PullRequest = () => {
       <Label htmlFor="commit">Commit Title</Label>
       <Input
         id="commit"
-        placeholder="feat: token update"
+        placeholder={COMMIT_TITLE}
         onChange={(e) => {
           dispatch({
             name: "GET_GITHUB_COMMIT_TITLE",
             payload: { commitTitle: e.target.value },
+          });
+        }}
+      />
+      <Label htmlFor="baseBranch">Base Branch</Label>
+      <Input
+        id="baseBranch"
+        placeholder={BASE_BRANCH}
+        onChange={(e) => {
+          dispatch({
+            name: "GET_GITHUB_BASE_BRANCH",
+            payload: { baseBranch: e.target.value },
           });
         }}
       />

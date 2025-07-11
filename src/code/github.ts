@@ -1,5 +1,5 @@
 import type { ActionsType, ScssType } from "../common/fromPlugin";
-import { BRANCH_NAME } from "../constants/github";
+import { TARGET_BRANCH, COMMIT_TITLE, BASE_BRANCH } from "../constants/github";
 
 export type repoInfoType = {
   fileName: string;
@@ -12,17 +12,18 @@ export const commitMultipleFilesToGithub = async (
   token: string,
   commitMessage: string,
   scss: ScssType,
+  baseBranch: string,
   isRememberInfo?: boolean
 ) => {
-  const BASE_BRANCH = "dev";
-  const TARGET_BRANCH = BRANCH_NAME;
   const GITHUB_API = "https://api.github.com";
   const [owner, repo] = repoUrl.split("/").slice(-2);
 
   try {
     // ✅ Step 1: 기준 브랜치 (dev)의 SHA 가져오기
     const baseRefRes = await fetch(
-      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${BASE_BRANCH}`,
+      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${
+        baseBranch || BASE_BRANCH
+      }`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -118,7 +119,7 @@ export const commitMultipleFilesToGithub = async (
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          message: commitMessage || "feat: update token",
+          message: commitMessage || COMMIT_TITLE,
           tree: newTreeSha,
           parents: [latestCommitSha],
         }),

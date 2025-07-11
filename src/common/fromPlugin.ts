@@ -1,9 +1,10 @@
 import { emit as e, on as o } from "@create-figma-plugin/utilities";
 
-type GithubPayload = GetGithubRepoUrlPayload &
+export type GithubPayload = GetGithubRepoUrlPayload &
   GetGithubAccessTokenPayload &
   GetScssPayload &
   GetCommitTitlePayload &
+  GetBaseBranchPayload &
   IsRememberInfoPayload;
 
 export interface GetGithubRepoUrlPayload {
@@ -31,6 +32,10 @@ export interface GetScssPayload {
 
 interface GetCommitTitlePayload {
   commitTitle: string;
+}
+
+interface GetBaseBranchPayload {
+  baseBranch: string;
 }
 
 interface IsRememberInfoPayload {

@@ -8,16 +8,18 @@ import {
   emit,
   type ActionsType,
   type Events,
-  type ScssType,
+  type GithubPayload,
+  // type ScssType,
 } from "../common/fromPlugin";
 
-type State = {
-  githubRepositoryUrl: string;
-  githubAccessToken: string;
-  scss: ScssType;
-  commitTitle: string;
-  isRememberInfo?: boolean;
-};
+// type State = {
+//   githubRepositoryUrl: string;
+//   githubAccessToken: string;
+//   scss: ScssType;
+//   commitTitle: string;
+//   baseBranch: string;
+//   isRememberInfo?: boolean;
+// };
 
 type Action =
   | { name: "GET_GITHUB_REPO_URL"; payload: { githubRepositoryUrl: string } }
@@ -32,12 +34,16 @@ type Action =
       payload: { commitTitle: string };
     }
   | {
+      name: "GET_GITHUB_BASE_BRANCH";
+      payload: { baseBranch: string };
+    }
+  | {
       name: "IS_REMEMBER_API_KEY";
       payload: { isRememberInfo: boolean };
     };
 
 interface AppContextProps {
-  state: State;
+  state: GithubPayload;
   dispatch: Dispatch<Action>;
 }
 
@@ -48,7 +54,7 @@ const initScss: ActionsType = {
 };
 
 // 초기 상태
-const initialState: State = {
+const initialState: GithubPayload = {
   githubRepositoryUrl: "",
   githubAccessToken: "",
   scss: {
@@ -56,11 +62,12 @@ const initialState: State = {
     variables: [initScss],
   },
   commitTitle: "",
+  baseBranch: "",
   isRememberInfo: false,
 };
 
 // 리듀서 함수
-function reducer(state: State, action: Action) {
+function reducer(state: GithubPayload, action: Action) {
   switch (action.name) {
     case "GET_GITHUB_REPO_URL":
       return {
@@ -86,6 +93,11 @@ function reducer(state: State, action: Action) {
       return {
         ...state,
         commitTitle: action.payload.commitTitle,
+      };
+    case "GET_GITHUB_BASE_BRANCH":
+      return {
+        ...state,
+        baseBranch: action.payload.baseBranch,
       };
     case "IS_REMEMBER_API_KEY":
       return {

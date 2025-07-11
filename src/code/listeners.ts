@@ -7,8 +7,9 @@ export function listenDeployScss() {
     async ({
       githubRepositoryUrl,
       githubAccessToken,
-      scss,
       commitTitle,
+      scss,
+      baseBranch,
       isRememberInfo,
     }) => {
       try {
@@ -17,6 +18,7 @@ export function listenDeployScss() {
           githubAccessToken,
           commitTitle,
           scss,
+          baseBranch,
           isRememberInfo
         );
 
