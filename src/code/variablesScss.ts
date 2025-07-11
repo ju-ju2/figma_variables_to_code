@@ -1,317 +1,173 @@
-import type { ActionsType } from "../common/fromPlugin";
-import { ROOT_FILE_PATH } from "../constants/github";
-import { styleLintCode } from "./code";
-import { rgbaToHex } from "./shared";
+import type { ActionsType } from "@/common/fromPlugin";
+import { ROOT_FILE_PATH } from "@/constants/github";
 
-type StyleVarValue = {
-  mode: string;
-  value: string;
-};
+export const getVariablesStyles = async () => {
+  const variables = await figma.variables.getLocalVariablesAsync();
+  const collections = await figma.variables.getLocalVariableCollectionsAsync();
 
-type StyleCollection = {
-  id: string;
-  name: string;
-  modes: Array<object>;
-  variables: Array<StyleVariable>;
-  data: VariableCollection;
-};
+  const sanitizeName = (name: string) =>
+    name.replace(/[^\w-]/g, "").replace(/\s+/g, "");
 
-type StyleCollectionDict = Record<string, StyleCollection>;
-
-type StyleVariable = {
-  id: string;
-  data: Variable;
-  cssPropertyName: string;
-  values: Array<StyleVarValue>;
-};
-
-type StyleVariableDict = Record<string, StyleVariable>;
-
-type SCSSPropertyObject = {
-  [key: string]: {
-    [key: string]: string | { [key: string]: string };
+  const makeVariableName = (collectionName: string, variable: Variable) => {
+    const parts = variable.name.split("/").map(sanitizeName);
+    return [sanitizeName(collectionName), ...parts].join("-");
   };
-};
 
-function findVariableById(id: string, variables: Array<Variable>) {
-  return variables.find((variable) => variable.id === id);
-}
-
-function resolveVarAlias(
-  alias: VariableAlias,
-  variables: Array<Variable>,
-  modeName?: string
-): string {
-  const variable = findVariableById(alias.id, variables);
-  if (!variable) {
-    console.error("Variable not found:", alias.id);
-    return "";
-  }
-  const cssPropertyName = createCSSPropertyName(variable.name, modeName);
-  return `${cssPropertyName}`;
-}
-
-function createCSSPropertyName(name: string, modeName?: string) {
-  let cssName = name.replace(/[^a-zA-Z0-9-]/g, "-");
-  cssName = modeName
-    ? `_${cssName}-${modeName.toLocaleLowerCase()}`
-    : `_${cssName}`;
-  return cssName;
-}
-
-function parseVariableValue(
-  variable: Variable,
-  modeName: string | undefined,
-  value: VariableValue,
-  allVariables: Array<Variable>
-) {
-  let parsedValue = "";
-
-  if (value === undefined) {
-    console.error("Value is undefined");
-    return null;
-  }
-
-  if (
-    value instanceof Object &&
-    "type" in value &&
-    value.type === "VARIABLE_ALIAS"
-  ) {
-    // Fetch the alias value
-    const resolvedValue = resolveVarAlias(value, allVariables, modeName);
-    parsedValue = resolvedValue;
-  } else if (value instanceof Object && variable.resolvedType === "COLOR") {
-    // Color
-    const color = value as RGBA;
-    const _color = {
-      ...color,
-      r: color.r * 255,
-      b: color.b * 255,
-      g: color.g * 255,
-    };
-    const hexColor = rgbaToHex(_color.r, _color.g, _color.b, _color.a);
-
-    parsedValue = hexColor;
-  } else if (typeof value === "number") {
-    // Number
-    parsedValue = `${value}px`;
-  } else {
-    // this should be text so put it in quotes
-    // unsure if this can be converted to a CSS value
-    parsedValue = `'${value.toString()}'`;
-  }
-
-  return parsedValue;
-}
-
-const getPrefix = (name: string) => {
-  if (name.startsWith("_")) {
-    name = name.slice(1);
-  }
-  const segments = name.split(/[-/]/);
-  return {
-    prefix: segments[0],
-    subPrefix: segments.length > 1 ? segments[1] : undefined,
-  };
-};
-
-const getFileInfo = (name: string) => {
-  const folderList = ["global", "font", "atomic", "semantic"];
-  const prefix = getPrefix(name).prefix.toLocaleLowerCase();
-  let file_path = "";
-  if (folderList.includes(prefix)) {
-    file_path = `${ROOT_FILE_PATH}/variables/${prefix}/_index.scss`;
-  } else {
-    file_path = `${ROOT_FILE_PATH}/variables/_index.scss`;
-  }
-  return file_path;
-};
-
-// 이중 객체인 경우, 단일 객체인 경우에 따라 SCSS Map으로 변환
-function convertToScssMap(
-  objName: string,
-  obj: { [key: string]: string | { [key: string]: string } }
-): string {
-  let scssMap = `$${objName}: (\n`;
-
-  for (const key in obj) {
-    const value = obj[key];
-    if (typeof value === "object" && value !== null) {
-      scssMap += `  ${key}: (\n`;
-      for (const subKey in value) {
-        scssMap += `    ${subKey}: ${value[subKey]},\n`;
-      }
-      scssMap += `  ),\n`;
-    } else {
-      scssMap += `  ${key}: ${value},\n`;
+  const getVariableById = async (id: string): Promise<Variable | undefined> => {
+    try {
+      return (await figma.variables.getVariableByIdAsync(id)) ?? undefined;
+    } catch {
+      return undefined;
     }
+  };
+
+  const getVariableCollectionById = async (
+    id: string
+  ): Promise<VariableCollection | undefined> => {
+    try {
+      return (
+        (await figma.variables.getVariableCollectionByIdAsync(id)) ?? undefined
+      );
+    } catch {
+      return undefined;
+    }
+  };
+
+  const resolveVariableValue = async (
+    variable: Variable,
+    registerRef: (refCollectionName: string) => void
+  ): Promise<string> => {
+    const modeId = Object.keys(variable.valuesByMode)[0];
+    const value = variable.valuesByMode[modeId];
+
+    if (value !== 0 && !value) return "undefined";
+
+    // [1] 참조 변수
+    if (
+      typeof value === "object" &&
+      "type" in value &&
+      value.type === "VARIABLE_ALIAS"
+    ) {
+      const refVar = await getVariableById(value.id);
+      if (!refVar) return "undefined";
+
+      const refCollection = await getVariableCollectionById(
+        refVar.variableCollectionId
+      );
+      const refCollectionName = sanitizeName(refCollection?.name || "Unknown");
+
+      registerRef(refCollectionName);
+
+      const refName = makeVariableName(refCollectionName, refVar);
+      return `map-get($${refCollectionName}, ${refName})`;
+    }
+
+    // [2] Color
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "r" in value &&
+      "g" in value &&
+      "b" in value
+    ) {
+      const r = Math.round(value.r * 255);
+      const g = Math.round(value.g * 255);
+      const b = Math.round(value.b * 255);
+      const a =
+        "a" in value && typeof value.a === "number"
+          ? Math.round(value.a * 255)
+          : 255;
+      return `#${[r, g, b, a]
+        .map((n) => n.toString(16).padStart(2, "0"))
+        .join("")}`;
+    }
+
+    // [3] Number / String
+    if (typeof value === "number") return `${value}px`;
+    if (typeof value === "string") return value;
+
+    return "undefined";
+  };
+
+  // 그룹핑
+  const groupedByCollection = new Map<string, Variable[]>();
+  for (const variable of variables) {
+    const list = groupedByCollection.get(variable.variableCollectionId) ?? [];
+    list.push(variable);
+    groupedByCollection.set(variable.variableCollectionId, list);
   }
 
-  scssMap += ");";
-  return scssMap;
-}
+  // index.scss content 모음
+  const rootForwardLines: string[] = [];
 
-function formatPropertyValue(valueString: string): string {
-  if (valueString.startsWith("_")) {
-    const { prefix } = getPrefix(valueString);
-    return `map-get($${prefix}, ${valueString})`;
-  }
-  return valueString;
-}
+  // 컬렉션 단위 SCSS 생성
+  const getSCSSMap = async (
+    collectionName: string,
+    variables: Variable[]
+  ): Promise<string> => {
+    const usedCollectionNames = new Set<string>();
 
-function toCSSString(
-  collections: StyleCollectionDict,
-  vars: StyleVariableDict
-) {
-  const sortedCollections = sortCollectionsByName(collections);
-  const cssPropertyObject: SCSSPropertyObject = {};
-  const css: string[] = [];
+    const registerRef = (refCollectionName: string) => {
+      if (sanitizeName(refCollectionName) !== sanitizeName(collectionName)) {
+        usedCollectionNames.add(refCollectionName);
+      }
+    };
+
+    const entries = await Promise.all(
+      variables.map(async (v) => {
+        const name = makeVariableName(collectionName, v);
+        const value = await resolveVariableValue(v, registerRef);
+        return `  ${name}: ${value}`;
+      })
+    );
+
+    const sanitized = sanitizeName(collectionName);
+
+    const importLines: string[] = [];
+    if (usedCollectionNames.size > 0) {
+      importLines.push(`@use "sass:map";`);
+      for (const ref of usedCollectionNames) {
+        importLines.push(`@use "../${ref.toLowerCase()}" as *;`);
+      }
+    }
+
+    return [
+      ...importLines,
+      `$${sanitized}: (\n${entries.join(",\n")}\n);`,
+    ].join("\n\n");
+  };
+
   const actions: ActionsType[] = [
     {
       file_path: `${ROOT_FILE_PATH}/variables/_index.scss`,
-      content: `@forward "global";\n@forward "font";\n@forward "atomic";\n@forward "semantic";`,
+      content: "", // 나중에 forward 내용으로 채움
       action: "create",
     },
   ];
 
-  sortedCollections.forEach((collection) => {
-    processCollection(collection, vars, cssPropertyObject, css);
-  });
+  for (const collection of collections) {
+    const collectionName = collection.name;
+    const vars = groupedByCollection.get(collection.id) || [];
+    const content = await getSCSSMap(collectionName, vars);
 
-  generateActions(cssPropertyObject, actions);
+    const sanitized = sanitizeName(collectionName);
+    const filePath = `${ROOT_FILE_PATH}/variables/${sanitized.toLowerCase()}/_index.scss`;
 
-  return { css, actions };
-}
-
-function sortCollectionsByName(
-  collections: StyleCollectionDict
-): StyleCollection[] {
-  return Object.values(collections).sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-}
-
-function processCollection(
-  collection: StyleCollection,
-  vars: StyleVariableDict,
-  scssPropertyObject: SCSSPropertyObject,
-  css: string[]
-) {
-  collection.data.variableIds.forEach((varID) => {
-    const variable = vars[varID];
-
-    if (variable.values?.length > 0) {
-      variable.values.forEach((modeValue) => {
-        const modeName =
-          variable.values.length === 1
-            ? ""
-            : `-${modeValue.mode.toLowerCase()}`;
-        const scssPropertyKey = `${createCSSPropertyName(
-          variable.cssPropertyName
-        )}${modeName}`;
-        const scssPropertyValue = modeValue.value;
-        const cssPropertyName = `${scssPropertyKey}: ${scssPropertyValue};`;
-
-        css.push(cssPropertyName);
-
-        const { prefix, subPrefix } = getPrefix(variable.cssPropertyName);
-
-        if (!scssPropertyObject[prefix]) {
-          scssPropertyObject[prefix] = {};
-        }
-
-        if (prefix === "Component" && subPrefix) {
-          if (!scssPropertyObject[prefix][subPrefix]) {
-            scssPropertyObject[prefix][subPrefix] = {};
-          }
-          (scssPropertyObject[prefix][subPrefix] as { [key: string]: string })[
-            scssPropertyKey
-          ] = formatPropertyValue(scssPropertyValue);
-        } else {
-          scssPropertyObject[prefix][scssPropertyKey] =
-            formatPropertyValue(scssPropertyValue);
-        }
-      });
-    }
-  });
-}
-
-function generateActions(
-  scssPropertyObject: SCSSPropertyObject,
-  actions: ActionsType[]
-) {
-  for (const prefix in scssPropertyObject) {
-    const file_path = getFileInfo(prefix);
-    const levels = scssPropertyObject[prefix];
-    const scssMap = convertToScssMap(prefix, levels);
-    let content = "";
-
-    if (prefix === "atomic") {
-      content = `${styleLintCode}\n\n${scssMap}`;
-    } else if (prefix === "semantic") {
-      content = `${styleLintCode}\n\n@use "sass:map";\n@use "../atomic" as *;\n\n${scssMap}`;
-    } else {
-      // 예외 처리: atomic, semantic가 아닌 경우는 생성하지 않음
-      console.warn(
-        `Unknown prefix: ${prefix}. It will be excluded from the file.`
-      );
-      continue;
-    }
-
+    // 🔹 actions 배열에 컬렉션 파일 추가
     actions.push({
-      file_path,
+      file_path: filePath,
       content,
       action: "create",
     });
-  }
-}
 
-export async function getVariablesStyles() {
-  const variables = await figma.variables.getLocalVariablesAsync();
-  const collections = await figma.variables.getLocalVariableCollectionsAsync();
-
-  const collectionDictionary: StyleCollectionDict = {};
-  const variableDictionary: StyleVariableDict = {};
-
-  // process the collections
-  for (const collection of collections) {
-    const styleCollection = {} as StyleCollection;
-    styleCollection.id = collection.id;
-    styleCollection.name = collection.name;
-    styleCollection.data = collection;
-    styleCollection.modes = collection.modes;
-    collectionDictionary[styleCollection.id] = styleCollection;
+    // 🔹 root forward 라인 추가
+    rootForwardLines.push(`@forward "${sanitized.toLowerCase()}";`);
   }
 
-  for (const variable of variables) {
-    const styleVar = {} as StyleVariable;
-    styleVar.id = variable.id;
-    styleVar.data = variable;
-    styleVar.cssPropertyName = variable.name;
-    styleVar.values = [];
-    variableDictionary[styleVar.id] = styleVar;
+  // 마지막에 루트 index.scss 업데이트
+  actions[0].content = rootForwardLines.join("\n");
 
-    const varCollection = collectionDictionary[variable.variableCollectionId];
-
-    const modes = varCollection?.data.modes;
-
-    Object.entries(variable.valuesByMode).forEach(([key]) => {
-      const modeValue = variable.valuesByMode[key];
-      const modeName =
-        modes.length > 1
-          ? modes?.find((mode) => mode.modeId === key)?.name
-          : undefined;
-
-      const parsedValue = parseVariableValue(
-        variable,
-        modeName,
-        modeValue,
-        variables
-      );
-      styleVar.values.push({ mode: modeName || "", value: parsedValue || "" });
-    });
-  }
-
-  const cssString = toCSSString(collectionDictionary, variableDictionary);
-  return cssString;
-}
+  return {
+    actions,
+  };
+};
