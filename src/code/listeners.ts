@@ -1,5 +1,5 @@
 import { on } from "../common/fromPlugin";
-import { createGithubClient } from "./github";
+import { commitMultipleFilesToGithub } from "./github";
 
 export function listenDeployScss() {
   on(
@@ -12,14 +12,13 @@ export function listenDeployScss() {
       isRememberInfo,
     }) => {
       try {
-        const { createDeployMR } = await createGithubClient(
+        await commitMultipleFilesToGithub(
           githubRepositoryUrl,
           githubAccessToken,
-          scss,
           commitTitle,
+          scss,
           isRememberInfo
         );
-        await createDeployMR();
 
         figma.closePlugin();
         figma.notify("Scss Pull Request", { timeout: 5000 });

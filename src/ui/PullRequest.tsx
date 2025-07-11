@@ -32,11 +32,13 @@ const PullRequest = () => {
           });
         }}
       />
-      <Label htmlFor="email">
+      <Label htmlFor="token">
         Github Access Token<span className="text-red-400">*</span>
       </Label>
       <Input
-        id="email"
+        id="token"
+        type="password"
+        autoComplete="off"
         placeholder="Github Access Token"
         onChange={(e) => {
           dispatch({

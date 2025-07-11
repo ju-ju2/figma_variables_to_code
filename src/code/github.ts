@@ -1,5 +1,5 @@
-import type { ScssType } from "../common/fromPlugin";
-import { BRANCH_NAME, ROOT_FILE_PATH } from "../constants/github";
+import type { ActionsType, ScssType } from "../common/fromPlugin";
+import { BRANCH_NAME } from "../constants/github";
 
 export type repoInfoType = {
   fileName: string;
@@ -7,280 +7,196 @@ export type repoInfoType = {
   accessToken: string;
 };
 
-export const createGithubClient = async (
-  githubRepositoryUrl: string,
-  githubAccessToken: string,
+export const commitMultipleFilesToGithub = async (
+  repoUrl: string,
+  token: string,
+  commitMessage: string,
   scss: ScssType,
-  commitTitle: string,
   isRememberInfo?: boolean
 ) => {
-  let SHA = "";
-  const GITHUB_TOKEN = githubAccessToken;
-  const GITHUB_URL = "https://api.github.com";
-  // https://github.com/Moodihood/frontend
-  const OWNER = GITHUB_URL.split("/").slice(-2, -1)[0];
-  const REPO = GITHUB_URL.split("/").slice(-1)[0];
+  const BASE_BRANCH = "dev";
+  const TARGET_BRANCH = BRANCH_NAME;
+  const GITHUB_API = "https://api.github.com";
+  const [owner, repo] = repoUrl.split("/").slice(-2);
 
-  const checkScssBranchExists = async () => {
-    const response = await fetch(
-      `${GITHUB_URL}/repos/${OWNER}/${REPO}/branches/${BRANCH_NAME}`,
+  console.log("🚀 Start GitHub commit process...");
+  console.log(
+    "👉 Owner:",
+    owner,
+    "Repo:",
+    repo,
+    "Base:",
+    BASE_BRANCH,
+    "Target:",
+    TARGET_BRANCH
+  );
+
+  try {
+    // ✅ Step 1: 기준 브랜치 (dev)의 SHA 가져오기
+    const baseRefRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${BASE_BRANCH}`,
       {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
+    if (!baseRefRes.ok) throw new Error("❌ 기준 브랜치 정보 조회 실패");
 
-    return response.ok;
-  };
+    const baseRefData = await baseRefRes.json();
+    const baseCommitSha = baseRefData.object.sha;
+    console.log("✅ 기준 브랜치 SHA:", baseCommitSha);
 
-  const createBranch = async () => {
-    // Step 1. 기준 브랜치 SHA 가져오기
-    const refRes = await fetch(
-      `https://api.github.com/repos/${OWNER}/${REPO}/git/ref/heads/main`,
-      {
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      }
+    // ✅ Step 2: 대상 브랜치(BRANCH_NAME) 존재 여부 확인 및 없으면 생성
+    const targetRefRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${TARGET_BRANCH}`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    if (!refRes.ok) {
-      throw new Error(
-        "Failed to create branch: Failed to get reference for main branch"
+    if (!targetRefRes.ok) {
+      // 브랜치가 없으면 생성
+      const createBranchRes = await fetch(
+        `${GITHUB_API}/repos/${owner}/${repo}/git/refs`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            ref: `refs/heads/${TARGET_BRANCH}`,
+            sha: baseCommitSha,
+          }),
+        }
       );
-    }
-
-    const data = await refRes.json();
-    SHA = data.object.sha;
-
-    // Step 2. 새로운 브랜치 생성
-    const createBranchRes = await fetch(
-      `https://api.github.com/repos/${OWNER}/${REPO}/git/refs`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        body: JSON.stringify({
-          ref: `refs/heads/${BRANCH_NAME}`,
-          sha: SHA,
-        }),
+      if (!createBranchRes.ok) {
+        const err = await createBranchRes.json();
+        throw new Error("❌ 새 브랜치 생성 실패: " + JSON.stringify(err));
       }
-    );
-
-    if (!createBranchRes.ok) {
-      throw new Error("Failed to create branch");
-    }
-
-    return createBranchRes.json();
-  };
-
-  const scssBranchExists = await checkScssBranchExists();
-
-  const checkFolderExists = async () => {
-    const response = await fetch(
-      `https://api.github.com/repos/${OWNER}/${REPO}/contents/${ROOT_FILE_PATH}?ref=${BRANCH_NAME}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to checkFolderExists");
-    }
-
-    const data = await response.json();
-    return data.length > 0;
-  };
-
-  const createCommit = async (commitMessage: string, scss: ScssType) => {
-    const folderExists = await checkFolderExists();
-
-    const response = await fetch(
-      `https://api.github.com/repos/${OWNER}/${REPO}/contents/${ROOT_FILE_PATH}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        body: JSON.stringify({
-          message: commitMessage,
-          content: btoa(
-            encodeURIComponent([scss.localStyles, ...scss.variables].join("\n"))
-          ),
-          branch: BRANCH_NAME,
-          sha: folderExists ? SHA : undefined,
-        }),
-      }
-    );
-
-    // const actions = folderExists
-    //   ? [
-    //       { action: "delete", file_path: ROOT_FILE_PATH },
-    //       scss.localStyles,
-    //       ...scss.variables,
-    //     ]
-    //   : [scss.localStyles, ...scss.variables];
-
-    // actions.push({
-    //   file_path: `${ROOT_FILE_PATH}/_index.scss`,
-    //   content: `@forward "localStyles";\n@forward "variables";`,
-    //   action: "create",
-    // });
-
-    // const response = await fetch(`${GITHUB_API_URL}/repository/commits`, {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${GITHUB_TOKEN}`,
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     branch: BRANCH_NAME,
-    //     commit_message: commitMessage,
-    //     actions,
-    //   }),
-    // });
-
-    if (!response.ok) {
-      throw new Error("Failed to create commit");
-    }
-
-    return response.json();
-  };
-
-  const createPullRequest = async (
-    sourceBranch: string,
-    targetBranch: string,
-    title: string,
-    description: string
-  ) => {
-    const response = await fetch(
-      `https://api.github.com/repos/${OWNER}/${REPO}/pulls`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-        body: JSON.stringify({
-          head: sourceBranch,
-          base: targetBranch,
-          title,
-          body: description,
-        }),
-      }
-    );
-    // const response = await fetch(`${GITHUB_API_URL}/merge_requests`, {
-    //   method: "POST",
-    //   headers: {
-    //     Authorization: `Bearer ${GITHUB_TOKEN}`,
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     source_branch: sourceBranch,
-    //     target_branch: targetBranch,
-    //     title,
-    //     description,
-    //   }),
-    // });
-
-    if (!response.ok) {
-      throw new Error("Failed to create pull request");
-    }
-
-    return response.json();
-  };
-
-  const createDeployMR = async () => {
-    const _commitTitle =
-      commitTitle === "" ? "feat: update token" : commitTitle;
-    const prTitle = "update token";
-
-    if (!scssBranchExists) {
-      await createBranch();
-    }
-    await createCommit(_commitTitle, scss);
-    if (!scssBranchExists) {
-      await createPullRequest(BRANCH_NAME, "develop", prTitle, "");
-    }
-
-    if (isRememberInfo) {
-      await setRepoInfo();
+      console.log("✅ 새 브랜치 생성 완료:", TARGET_BRANCH);
     } else {
-      await deleteRepoInfo();
+      console.log("⚠️ 브랜치 이미 존재함:", TARGET_BRANCH);
     }
-  };
 
-  const setRepoInfo = async () => {
-    try {
-      const existingRepoInfo: repoInfoType[] =
-        (await figma.clientStorage.getAsync("repoInfo")) ?? [];
+    // ✅ Step 3: 새 브랜치의 최신 커밋 SHA 조회
+    const refRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${TARGET_BRANCH}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    if (!refRes.ok) throw new Error("❌ 대상 브랜치 SHA 조회 실패");
 
-      const isExistFileName = existingRepoInfo.some(
-        (item) => item.fileName === figma.root.name
-      );
+    const refData = await refRes.json();
+    const latestCommitSha = refData.object.sha;
+    console.log("🔍 대상 브랜치 최신 커밋 SHA:", latestCommitSha);
 
-      const repoInfo: repoInfoType = {
-        fileName: figma.root.name,
-        repoUrl: githubRepositoryUrl,
-        accessToken: githubAccessToken,
-      };
+    // ✅ Step 4: 커밋에서 tree SHA 추출
+    const commitRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const commitData = await commitRes.json();
+    const baseTreeSha = commitData.tree.sha;
+    console.log("✅ 트리 SHA:", baseTreeSha);
 
-      if (isExistFileName) {
-        const updatedRepoInfo = existingRepoInfo.filter(
+    // ✅ Step 5: 새로운 트리 생성 (SCSS 파일들)
+    const files: ActionsType[] = [scss.localStyles, ...scss.variables];
+    const tree = files.map((file) => ({
+      path: `${file.file_path}.scss`,
+      mode: "100644",
+      type: "blob",
+      content: file.content,
+    }));
+
+    const treeRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          base_tree: baseTreeSha,
+          tree,
+        }),
+      }
+    );
+    if (!treeRes.ok) throw new Error("❌ 트리 생성 실패");
+
+    const treeData = await treeRes.json();
+    const newTreeSha = treeData.sha;
+    console.log("✅ 트리 생성 완료:", newTreeSha);
+
+    // ✅ Step 6: 커밋 생성
+    const commitCreateRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          message: commitMessage || "feat: update token",
+          tree: newTreeSha,
+          parents: [latestCommitSha],
+        }),
+      }
+    );
+    if (!commitCreateRes.ok) throw new Error("❌ 커밋 생성 실패");
+
+    const newCommit = await commitCreateRes.json();
+    const newCommitSha = newCommit.sha;
+    console.log("✅ 커밋 생성 완료:", newCommitSha);
+
+    // ✅ Step 7: 브랜치 HEAD 업데이트
+    const updateRes = await fetch(
+      `${GITHUB_API}/repos/${owner}/${repo}/git/refs/heads/${TARGET_BRANCH}`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ sha: newCommitSha }),
+      }
+    );
+    if (!updateRes.ok) throw new Error("❌ 브랜치 HEAD 업데이트 실패");
+
+    console.log("✅ 브랜치 HEAD 업데이트 완료");
+
+    // ✅ Step 8: 저장 로직 유지
+    const setRepoInfo = async () => {
+      try {
+        const existing: repoInfoType[] =
+          (await figma.clientStorage.getAsync("repoInfo")) ?? [];
+
+        const updated = existing.filter(
           (item) => item.fileName !== figma.root.name
         );
+        updated.push({
+          fileName: figma.root.name,
+          repoUrl,
+          accessToken: token,
+        });
 
-        updatedRepoInfo.push(repoInfo);
-        await figma.clientStorage.setAsync("repoInfo", updatedRepoInfo);
-        return;
+        if (updated.length > 10) updated.shift();
+        await figma.clientStorage.setAsync("repoInfo", updated);
+      } catch (err) {
+        console.log("⚠️ setRepoInfo Error:", err);
       }
+    };
 
-      if (existingRepoInfo.length === 10) {
-        existingRepoInfo.shift();
-      }
+    const deleteRepoInfo = async () => {
+      try {
+        const existing: repoInfoType[] =
+          (await figma.clientStorage.getAsync("repoInfo")) ?? [];
 
-      await figma.clientStorage.setAsync("repoInfo", [
-        ...existingRepoInfo,
-        repoInfo,
-      ]);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const deleteRepoInfo = async () => {
-    try {
-      const figmaFileName = figma.root.name;
-      const existingRepoInfo: repoInfoType[] =
-        (await figma.clientStorage.getAsync("repoInfo")) ?? [];
-
-      const isFileNameExists = existingRepoInfo.some(
-        (item) => item.fileName === figmaFileName
-      );
-
-      if (isFileNameExists) {
-        const updatedRepoInfo = existingRepoInfo.filter(
-          (item) => item.fileName !== figmaFileName
+        const updated = existing.filter(
+          (item) => item.fileName !== figma.root.name
         );
-        await figma.clientStorage.setAsync("repoInfo", updatedRepoInfo);
+        await figma.clientStorage.setAsync("repoInfo", updated);
+      } catch (err) {
+        console.log("⚠️ deleteRepoInfo Error:", err);
       }
-    } catch (err) {
-      console.log(err);
-    }
-  };
+    };
 
-  return { createDeployMR };
+    if (isRememberInfo) await setRepoInfo();
+    else await deleteRepoInfo();
+
+    return { success: true, commitSha: newCommitSha };
+  } catch (err) {
+    console.error("🔥 에러 발생:", err);
+    return { success: false, error: err };
+  }
 };
