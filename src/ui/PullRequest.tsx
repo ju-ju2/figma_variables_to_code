@@ -4,9 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BASE_BRANCH, COMMIT_TITLE } from "@/constants/github";
 import { useAppState } from "@/contexts/AppContext";
+import { Loader2Icon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const PullRequest = () => {
   const { state, dispatch } = useAppState();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleMergeRequest = () => {
     dispatch({
@@ -16,6 +19,30 @@ const PullRequest = () => {
       },
     });
   };
+
+  useEffect(() => {
+    const messageHandler = (e: MessageEvent) => {
+      const message = e.data.pluginMessage;
+
+      if (message.type === "error") {
+        setIsLoading(false);
+      }
+
+      if (message.type === "LOADING_START") {
+        setIsLoading(true);
+      }
+
+      if (message.type === "LOADING_END") {
+        setIsLoading(false);
+      }
+    };
+
+    window.addEventListener("message", messageHandler);
+
+    return () => {
+      window.removeEventListener("message", messageHandler);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 p-4 h-[500px]">
@@ -88,8 +115,11 @@ const PullRequest = () => {
       <Button
         className="mt-auto"
         onClick={handleMergeRequest}
-        disabled={!state.githubRepositoryUrl || !state.githubAccessToken}
+        disabled={
+          !state.githubRepositoryUrl || !state.githubAccessToken || isLoading
+        }
       >
+        {isLoading && <Loader2Icon className="animate-spin" />}
         Pull Request
       </Button>
     </div>

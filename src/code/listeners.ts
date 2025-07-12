@@ -13,6 +13,8 @@ export function listenDeployScss() {
       isRememberInfo,
     }) => {
       try {
+        figma.ui.postMessage({ type: "LOADING_START" });
+
         const result = await commitMultipleFilesToGithub(
           githubRepositoryUrl,
           githubAccessToken,
@@ -21,6 +23,8 @@ export function listenDeployScss() {
           baseBranch,
           isRememberInfo
         );
+
+        figma.ui.postMessage({ type: "LOADING_END" });
 
         if (result.success) {
           figma.closePlugin();
