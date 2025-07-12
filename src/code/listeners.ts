@@ -1,9 +1,10 @@
+import { FIGMA_EVENT, FIGMA_MESSAGE } from "@/constants/figma";
 import { on } from "../common/fromPlugin";
 import { commitMultipleFilesToGithub } from "./github";
 
 export function listenDeployScss() {
   on(
-    "PULL_REQUEST_SCSS",
+    FIGMA_EVENT.PULL_REQUEST_SCSS,
     async ({
       githubRepositoryUrl,
       githubAccessToken,
@@ -13,7 +14,7 @@ export function listenDeployScss() {
       isRememberInfo,
     }) => {
       try {
-        figma.ui.postMessage({ type: "LOADING_START" });
+        figma.ui.postMessage({ type: FIGMA_MESSAGE.LOADING_START });
 
         const result = await commitMultipleFilesToGithub(
           githubRepositoryUrl,
@@ -24,7 +25,7 @@ export function listenDeployScss() {
           isRememberInfo
         );
 
-        figma.ui.postMessage({ type: "LOADING_END" });
+        figma.ui.postMessage({ type: FIGMA_MESSAGE.LOADING_END });
 
         if (result.success) {
           figma.closePlugin();

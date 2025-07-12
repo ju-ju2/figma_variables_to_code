@@ -1,0 +1,23 @@
+export const FIGMA_ACTION = {
+  GET_GITHUB_REPO_URL: "GET_GITHUB_REPO_URL",
+  GET_GITHUB_ACCESS_TOKEN: "GET_GITHUB_ACCESS_TOKEN",
+  GET_GITHUB_COMMIT_TITLE: "GET_GITHUB_COMMIT_TITLE",
+  GET_GITHUB_BASE_BRANCH: "GET_GITHUB_BASE_BRANCH",
+  IS_REMEMBER_API_KEY: "IS_REMEMBER_API_KEY",
+} as const;
+
+export const FIGMA_EVENT = {
+  PULL_REQUEST_SCSS: "PULL_REQUEST_SCSS",
+  GET_SCSS_PREVIEW: "GET_SCSS_PREVIEW",
+} as const;
+
+export const FIGMA_MESSAGE = {
+  ERROR: "error",
+  LOADING_START: "loading_start",
+  LOADING_END: "loading_end",
+  LOAD_REPO_INFO: "load-repo-info",
+} as const;
+
+export const FIGMA_STORAGE = {
+  REPO_INFO: "repoInfo",
+};

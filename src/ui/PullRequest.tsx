@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FIGMA_ACTION, FIGMA_EVENT, FIGMA_MESSAGE } from "@/constants/figma";
 import { BASE_BRANCH, COMMIT_TITLE } from "@/constants/github";
 import { useAppState } from "@/contexts/AppContext";
 import { Loader2Icon } from "lucide-react";
@@ -13,7 +14,7 @@ const PullRequest = () => {
 
   const handleMergeRequest = () => {
     dispatch({
-      name: "PULL_REQUEST_SCSS",
+      name: FIGMA_EVENT.PULL_REQUEST_SCSS,
       payload: {
         ...state,
       },
@@ -24,15 +25,15 @@ const PullRequest = () => {
     const messageHandler = (e: MessageEvent) => {
       const message = e.data.pluginMessage;
 
-      if (message.type === "error") {
+      if (message.type === FIGMA_MESSAGE.ERROR) {
         setIsLoading(false);
       }
 
-      if (message.type === "LOADING_START") {
+      if (message.type === FIGMA_MESSAGE.LOADING_START) {
         setIsLoading(true);
       }
 
-      if (message.type === "LOADING_END") {
+      if (message.type === FIGMA_MESSAGE.LOADING_END) {
         setIsLoading(false);
       }
     };
@@ -54,7 +55,7 @@ const PullRequest = () => {
         placeholder="https://github.com/owner/repo"
         onChange={(e) => {
           dispatch({
-            name: "GET_GITHUB_REPO_URL",
+            name: FIGMA_ACTION.GET_GITHUB_REPO_URL,
             payload: { githubRepositoryUrl: e.target.value },
           });
         }}
@@ -70,7 +71,7 @@ const PullRequest = () => {
         placeholder="Github Access Token"
         onChange={(e) => {
           dispatch({
-            name: "GET_GITHUB_ACCESS_TOKEN",
+            name: FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN,
             payload: { githubAccessToken: e.target.value },
           });
         }}
@@ -82,7 +83,7 @@ const PullRequest = () => {
           checked={state.isRememberInfo}
           onCheckedChange={(checked: boolean) => {
             dispatch({
-              name: "IS_REMEMBER_API_KEY",
+              name: FIGMA_ACTION.IS_REMEMBER_API_KEY,
               payload: { isRememberInfo: checked },
             });
           }}
@@ -96,7 +97,7 @@ const PullRequest = () => {
         placeholder={COMMIT_TITLE}
         onChange={(e) => {
           dispatch({
-            name: "GET_GITHUB_COMMIT_TITLE",
+            name: FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE,
             payload: { commitTitle: e.target.value },
           });
         }}
@@ -107,7 +108,7 @@ const PullRequest = () => {
         placeholder={BASE_BRANCH}
         onChange={(e) => {
           dispatch({
-            name: "GET_GITHUB_BASE_BRANCH",
+            name: FIGMA_ACTION.GET_GITHUB_BASE_BRANCH,
             payload: { baseBranch: e.target.value },
           });
         }}

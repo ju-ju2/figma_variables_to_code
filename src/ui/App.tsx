@@ -3,6 +3,7 @@ import "./index.css";
 import PullRequest from "./PullRequest";
 import { useAppState } from "@/contexts/AppContext";
 import Error from "./Error";
+import { FIGMA_ACTION, FIGMA_MESSAGE } from "@/constants/figma";
 
 type UIStateType = {
   state: "error" | "success";
@@ -24,24 +25,24 @@ function App() {
     const messageHandler = (e: MessageEvent) => {
       const message = e.data.pluginMessage;
 
-      if (message.type === "error") {
+      if (message.type === FIGMA_MESSAGE.ERROR) {
         setUIState({
           state: "error",
           message: message.message,
           description: message.description,
         });
       }
-      if (message.type === "load-repo-info") {
+      if (message.type === FIGMA_MESSAGE.LOAD_REPO_INFO) {
         dispatch({
-          name: "GET_GITHUB_ACCESS_TOKEN",
+          name: FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN,
           payload: { githubAccessToken: message.payload.accessToken },
         });
         dispatch({
-          name: "GET_GITHUB_REPO_URL",
+          name: FIGMA_ACTION.GET_GITHUB_REPO_URL,
           payload: { githubRepositoryUrl: message.payload.repoUrl },
         });
         dispatch({
-          name: "IS_REMEMBER_API_KEY",
+          name: FIGMA_ACTION.IS_REMEMBER_API_KEY,
           payload: { isRememberInfo: message.payload.accessToken !== "" },
         });
       }

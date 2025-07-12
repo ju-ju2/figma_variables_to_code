@@ -9,36 +9,30 @@ import {
   type ActionsType,
   type Events,
   type GithubPayload,
-  // type ScssType,
 } from "../common/fromPlugin";
-
-// type State = {
-//   githubRepositoryUrl: string;
-//   githubAccessToken: string;
-//   scss: ScssType;
-//   commitTitle: string;
-//   baseBranch: string;
-//   isRememberInfo?: boolean;
-// };
+import { FIGMA_ACTION, FIGMA_EVENT } from "@/constants/figma";
 
 type Action =
-  | { name: "GET_GITHUB_REPO_URL"; payload: { githubRepositoryUrl: string } }
   | {
-      name: "GET_GITHUB_ACCESS_TOKEN";
+      name: typeof FIGMA_ACTION.GET_GITHUB_REPO_URL;
+      payload: { githubRepositoryUrl: string };
+    }
+  | {
+      name: typeof FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN;
       payload: { githubAccessToken: string };
     }
-  | Omit<Events["PULL_REQUEST_SCSS"], "handler">
-  | Omit<Events["GET_SCSS_PREVIEW"], "handler">
+  | Omit<Events[typeof FIGMA_EVENT.PULL_REQUEST_SCSS], "handler">
+  | Omit<Events[typeof FIGMA_EVENT.GET_SCSS_PREVIEW], "handler">
   | {
-      name: "GET_GITHUB_COMMIT_TITLE";
+      name: typeof FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE;
       payload: { commitTitle: string };
     }
   | {
-      name: "GET_GITHUB_BASE_BRANCH";
+      name: typeof FIGMA_ACTION.GET_GITHUB_BASE_BRANCH;
       payload: { baseBranch: string };
     }
   | {
-      name: "IS_REMEMBER_API_KEY";
+      name: typeof FIGMA_ACTION.IS_REMEMBER_API_KEY;
       payload: { isRememberInfo: boolean };
     };
 
@@ -69,37 +63,40 @@ const initialState: GithubPayload = {
 // 리듀서 함수
 function reducer(state: GithubPayload, action: Action) {
   switch (action.name) {
-    case "GET_GITHUB_REPO_URL":
+    case FIGMA_ACTION.GET_GITHUB_REPO_URL:
       return {
         ...state,
         githubRepositoryUrl: action.payload.githubRepositoryUrl,
       };
-    case "GET_GITHUB_ACCESS_TOKEN":
+    case FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN:
       return {
         ...state,
         githubAccessToken: action.payload.githubAccessToken,
       };
-    case "PULL_REQUEST_SCSS":
-      emit("PULL_REQUEST_SCSS", { ...action.payload, scss: state.scss });
+    case FIGMA_EVENT.PULL_REQUEST_SCSS:
+      emit(FIGMA_EVENT.PULL_REQUEST_SCSS, {
+        ...action.payload,
+        scss: state.scss,
+      });
       return {
         ...state,
       };
-    case "GET_SCSS_PREVIEW":
+    case FIGMA_EVENT.GET_SCSS_PREVIEW:
       return {
         ...state,
         scss: action.payload.scss,
       };
-    case "GET_GITHUB_COMMIT_TITLE":
+    case FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE:
       return {
         ...state,
         commitTitle: action.payload.commitTitle,
       };
-    case "GET_GITHUB_BASE_BRANCH":
+    case FIGMA_ACTION.GET_GITHUB_BASE_BRANCH:
       return {
         ...state,
         baseBranch: action.payload.baseBranch,
       };
-    case "IS_REMEMBER_API_KEY":
+    case FIGMA_ACTION.IS_REMEMBER_API_KEY:
       return {
         ...state,
         isRememberInfo: action.payload.isRememberInfo,

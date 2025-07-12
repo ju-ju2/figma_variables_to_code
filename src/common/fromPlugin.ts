@@ -1,3 +1,4 @@
+import type { FIGMA_EVENT } from "@/constants/figma";
 import { emit as e, on as o } from "@create-figma-plugin/utilities";
 
 export type GithubPayload = GetGithubRepoUrlPayload &
@@ -44,13 +45,13 @@ interface IsRememberInfoPayload {
 
 export type Events = {
   PULL_REQUEST_SCSS: {
-    name: "PULL_REQUEST_SCSS";
+    name: typeof FIGMA_EVENT.PULL_REQUEST_SCSS;
     payload: GithubPayload;
     handler: (props: GithubPayload) => void;
   };
 
   GET_SCSS_PREVIEW: {
-    name: "GET_SCSS_PREVIEW";
+    name: typeof FIGMA_EVENT.GET_SCSS_PREVIEW;
     payload: GetScssPayload;
     handler: (props: GetScssPayload) => void;
   };

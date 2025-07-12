@@ -1,3 +1,4 @@
+import { FIGMA_STORAGE } from "@/constants/figma";
 import type { ActionsType, ScssType } from "../common/fromPlugin";
 import { TARGET_BRANCH, COMMIT_TITLE, BASE_BRANCH } from "../constants/github";
 
@@ -148,7 +149,7 @@ export const commitMultipleFilesToGithub = async (
     const setRepoInfo = async () => {
       try {
         const existing: repoInfoType[] =
-          (await figma.clientStorage.getAsync("repoInfo")) ?? [];
+          (await figma.clientStorage.getAsync(FIGMA_STORAGE.REPO_INFO)) ?? [];
 
         const updated = existing.filter(
           (item) => item.fileName !== figma.root.name
@@ -160,7 +161,7 @@ export const commitMultipleFilesToGithub = async (
         });
 
         if (updated.length > 10) updated.shift();
-        await figma.clientStorage.setAsync("repoInfo", updated);
+        await figma.clientStorage.setAsync(FIGMA_STORAGE.REPO_INFO, updated);
       } catch (err) {
         console.log("⚠️ setRepoInfo Error:", err);
       }
@@ -169,12 +170,12 @@ export const commitMultipleFilesToGithub = async (
     const deleteRepoInfo = async () => {
       try {
         const existing: repoInfoType[] =
-          (await figma.clientStorage.getAsync("repoInfo")) ?? [];
+          (await figma.clientStorage.getAsync(FIGMA_STORAGE.REPO_INFO)) ?? [];
 
         const updated = existing.filter((item) => {
           return item.fileName !== figma.root.name;
         });
-        await figma.clientStorage.setAsync("repoInfo", updated);
+        await figma.clientStorage.setAsync(FIGMA_STORAGE.REPO_INFO, updated);
       } catch (err) {
         console.log("⚠️ deleteRepoInfo Error:", err);
       }

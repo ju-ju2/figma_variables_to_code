@@ -4,6 +4,7 @@ import { getVariablesStyles } from "./variablesScss";
 import { emit, type ActionsType } from "../common/fromPlugin";
 import { ROOT_FILE_PATH } from "../constants/github";
 import { getLocalStyles } from "./localStylesScss";
+import { FIGMA_EVENT, FIGMA_MESSAGE, FIGMA_STORAGE } from "@/constants/figma";
 // import { getVariablesStyles } from "./variablesScss";
 
 // const findDuplicateVariableNames = (variableStrings: string[]) => {
@@ -49,7 +50,7 @@ export const styleLintCode =
 //       )});`,
 //     };
 
-//     emit("GET_SCSS_PREVIEW", {
+//     emit("FIGMA_EVENT.GET_SCSS_PREVIEW", {
 //       scss: {
 //         localStyles: localStylesAction,
 //         variables: variableStyles.actions,
@@ -68,7 +69,7 @@ const getStyles = async () => {
     content: `${styleLintCode}\n\n$localStyles: (\n${localStyles.join("\n")});`,
   };
 
-  emit("GET_SCSS_PREVIEW", {
+  emit(FIGMA_EVENT.GET_SCSS_PREVIEW, {
     scss: {
       localStyles: localStylesAction,
       variables: variableStyles.actions,
@@ -81,14 +82,14 @@ const getRepoInfo = async () => {
     const figmaFileName = figma.root.name;
 
     const repoInfo: repoInfoType[] =
-      (await figma.clientStorage.getAsync("repoInfo")) ?? [];
+      (await figma.clientStorage.getAsync(FIGMA_STORAGE.REPO_INFO)) ?? [];
 
     const isExistRepo: repoInfoType = repoInfo.find(
       (item) => item.fileName === figmaFileName
     ) ?? { accessToken: "", fileName: "", repoUrl: "" };
 
     figma.ui.postMessage({
-      type: "load-repo-info",
+      type: FIGMA_MESSAGE.LOAD_REPO_INFO,
       payload: {
         accessToken: isExistRepo.accessToken,
         repoUrl: isExistRepo.repoUrl,
