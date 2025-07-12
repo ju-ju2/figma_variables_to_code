@@ -18,7 +18,7 @@ const PullRequest = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 h-[500px]">
       <Label htmlFor="repo">
         Github Repository URL<span className="text-red-400">*</span>
       </Label>
@@ -62,6 +62,7 @@ const PullRequest = () => {
         />
         <Label htmlFor="remember">Remember information</Label>
       </div>
+      <hr className="border-gray-300 my-2" />
       <Label htmlFor="commit">Commit Title</Label>
       <Input
         id="commit"
@@ -85,6 +86,7 @@ const PullRequest = () => {
         }}
       />
       <Button
+        className="mt-auto"
         onClick={handleMergeRequest}
         disabled={!state.githubRepositoryUrl || !state.githubAccessToken}
       >
