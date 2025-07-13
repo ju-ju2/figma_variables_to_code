@@ -49,7 +49,7 @@ Figma 스타일과 변수를 SCSS 또는 TypeScript 형식으로 변환하여 Gi
    - **GitHub Repository URL**
    - **GitHub Access Token** ([깃허브 토큰발급](https://github.com/settings/tokens))
    - **Type**
-   - **Commit Title** (기본값: `feat: tokens update`)
+   - **Commit Title** (기본값: `style: tokens update`)
    - **Base Branch** (기본값: `dev`)
 
 3. "Pull Request" 버튼을 클릭하여 스타일과 변수를 GitHub에 커밋합니다.
