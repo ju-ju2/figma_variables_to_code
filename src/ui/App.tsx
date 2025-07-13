@@ -39,7 +39,7 @@ function App() {
         });
         dispatch({
           name: FIGMA_ACTION.GET_GITHUB_REPO_URL,
-          payload: { githubRepositoryUrl: message.payload.repoUrl },
+          payload: { githubRepoUrl: message.payload.repoUrl },
         });
         dispatch({
           name: FIGMA_ACTION.IS_REMEMBER_API_KEY,

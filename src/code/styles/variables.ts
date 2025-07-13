@@ -1,10 +1,14 @@
-import type { ActionsType } from "@/common/fromPlugin";
 import { ROOT_FILE_PATH } from "@/constants/github";
-import { toCamelCase } from "../shared";
+import { toCamelCase, toPascalCase } from "../shared";
+import type { ActionsType } from "@/types/plugin";
+import type { FileFormatType } from "@/types/code";
 
-type FormatType = "SCSS" | "TS";
+// SCSS_RULE
+// collection: 소문자
+// $그룹: 소문자
+// var: 파스칼케이스
 
-export const getVariablesStyles = async (format: FormatType) => {
+export const getVariablesStyles = async (format: FileFormatType) => {
   const variables = await figma.variables.getLocalVariablesAsync();
   const collections = await figma.variables.getLocalVariableCollectionsAsync();
 
@@ -18,8 +22,10 @@ export const getVariablesStyles = async (format: FormatType) => {
     format === "TS"
       ? toCamelCase(`${collection}/${variable.name}`)
       : [
-          normalizeName(collection),
-          ...variable.name.split("/").map(normalizeName),
+          toPascalCase(collection),
+          ...variable.name
+            .split("/")
+            .map((n) => toPascalCase(normalizeName(n))),
         ].join("-");
 
   const getVariableById = async (id: string) => {
@@ -52,6 +58,7 @@ export const getVariablesStyles = async (format: FormatType) => {
       "type" in value &&
       value.type === "VARIABLE_ALIAS"
     ) {
+      // 변수를 참조하는 변수일 경우 참조되는 변수 id가 변수 리스트로 불러온 id와 달라 다시 확인 필요
       const refVar = await getVariableById(value.id);
       const refCollection = await getVariableCollectionById(
         refVar?.variableCollectionId || ""
@@ -61,6 +68,7 @@ export const getVariablesStyles = async (format: FormatType) => {
       registerRef(refColName);
 
       const refName = makeVariableName(refColName, refVar!);
+
       return format === "SCSS"
         ? `map-get($${refColName}, ${refName})`
         : `${refColName}.${refName}`;
@@ -118,7 +126,10 @@ export const getVariablesStyles = async (format: FormatType) => {
   ];
 
   for (const collection of collections) {
-    const vars = grouped.get(collection.id) || [];
+    // 변수들을 이름 기준으로 오름차순 정렬
+    const vars = (grouped.get(collection.id) || []).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
     const usedRefs = new Set<string>();
     const registerRef = (ref: string) => usedRefs.add(ref);
 
@@ -131,24 +142,24 @@ export const getVariablesStyles = async (format: FormatType) => {
     );
 
     const collectionName = makeCollectionName(collection.name);
-    const scssMap = `@use "sass:map";`;
+    const scssMap = `@use 'sass:map';`;
     const importLines = [
       ...(format === "SCSS" && usedRefs.size > 0 ? [scssMap] : []),
       ...[...usedRefs].map((r) =>
         format === "SCSS"
-          ? `@use "../${r}" as *;`
+          ? `@use '../${r}' as *;`
           : `import { ${r} } from '../${r}';`
       ),
     ];
+    const importBlock =
+      importLines.length > 0 ? `${importLines.join("\n")}\n\n` : "";
 
     const content =
       format === "SCSS"
-        ? `${importLines.join("\n")}\n\n$${collectionName}: (\n${entries.join(
+        ? `${importBlock}$${collectionName}: (\n${entries.join(",\n")}\n);`
+        : `${importBlock}export const ${collectionName} = {\n${entries.join(
             ",\n"
-          )}\n);`
-        : `${importLines.join(
-            "\n"
-          )}\n\nexport const ${collectionName} = {\n${entries.join(",\n")}\n};`;
+          )},\n};\n`;
 
     actions.push({
       action: "create",
@@ -160,7 +171,7 @@ export const getVariablesStyles = async (format: FormatType) => {
 
     rootLines.push(
       format === "SCSS"
-        ? `@forward "${collectionName}";`
+        ? `@forward '${collectionName}';`
         : `import { ${collectionName} } from './${collectionName}';`
     );
   }
@@ -169,7 +180,7 @@ export const getVariablesStyles = async (format: FormatType) => {
     rootLines.push(
       `export { ${collections
         .map((c) => makeCollectionName(c.name))
-        .join(", ")} };`
+        .join(", ")} };\n`
     );
   }
 

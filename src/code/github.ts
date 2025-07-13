@@ -1,27 +1,21 @@
 import { FIGMA_STORAGE } from "@/constants/figma";
-import type { ActionsType, StylesType } from "../common/fromPlugin";
 import { TARGET_BRANCH, COMMIT_TITLE, BASE_BRANCH } from "../constants/github";
 import { getStyles } from "./styles";
+import type { ActionsType, GithubPayload } from "@/types/plugin";
+import type { RepoInfoType } from "@/types/code";
 
-export type RepoInfoType = {
-  fileName: string;
-  repoUrl: string;
-  accessToken: string;
-  fileType: "TS" | "SCSS";
-};
-
-export const commitMultipleFilesToGithub = async (
-  repoUrl: string,
-  token: string,
-  commitMessage: string,
-  styles: StylesType,
-  baseBranch: string,
-  fileType: "TS" | "SCSS",
-  isRememberInfo?: boolean
-) => {
-  getStyles(fileType);
+export const commitMultipleFilesToGithub = async ({
+  githubRepoUrl,
+  githubAccessToken,
+  commitTitle,
+  styles,
+  baseBranch,
+  fileType,
+  isRememberInfo,
+}: GithubPayload) => {
+  await getStyles(fileType);
   const GITHUB_API = "https://api.github.com";
-  const [owner, repo] = repoUrl.split("/").slice(-2);
+  const [owner, repo] = githubRepoUrl.split("/").slice(-2);
 
   try {
     // ✅ Step 1: 기준 브랜치 (dev)의 SHA 가져오기
@@ -30,7 +24,7 @@ export const commitMultipleFilesToGithub = async (
         baseBranch || BASE_BRANCH
       }`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${githubAccessToken}` },
       }
     );
     if (!baseRefRes.ok) throw new Error("❌ 기준 브랜치 정보 조회 실패");
@@ -42,7 +36,7 @@ export const commitMultipleFilesToGithub = async (
     // ✅ Step 2: 대상 브랜치(BRANCH_NAME) 존재 여부 확인 및 없으면 생성
     const targetRefRes = await fetch(
       `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${TARGET_BRANCH}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${githubAccessToken}` } }
     );
 
     if (!targetRefRes.ok) {
@@ -51,7 +45,7 @@ export const commitMultipleFilesToGithub = async (
         `${GITHUB_API}/repos/${owner}/${repo}/git/refs`,
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${githubAccessToken}` },
           body: JSON.stringify({
             ref: `refs/heads/${TARGET_BRANCH}`,
             sha: baseCommitSha,
@@ -71,7 +65,7 @@ export const commitMultipleFilesToGithub = async (
     const refRes = await fetch(
       `${GITHUB_API}/repos/${owner}/${repo}/git/ref/heads/${TARGET_BRANCH}`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${githubAccessToken}` },
       }
     );
     if (!refRes.ok) throw new Error("❌ 대상 브랜치 SHA 조회 실패");
@@ -84,7 +78,7 @@ export const commitMultipleFilesToGithub = async (
     const commitRes = await fetch(
       `${GITHUB_API}/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${githubAccessToken}` },
       }
     );
     const commitData = await commitRes.json();
@@ -104,7 +98,7 @@ export const commitMultipleFilesToGithub = async (
       `${GITHUB_API}/repos/${owner}/${repo}/git/trees`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${githubAccessToken}` },
         body: JSON.stringify({
           base_tree: baseTreeSha,
           tree,
@@ -122,9 +116,9 @@ export const commitMultipleFilesToGithub = async (
       `${GITHUB_API}/repos/${owner}/${repo}/git/commits`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${githubAccessToken}` },
         body: JSON.stringify({
-          message: commitMessage || COMMIT_TITLE,
+          message: commitTitle || COMMIT_TITLE,
           tree: newTreeSha,
           parents: [latestCommitSha],
         }),
@@ -141,7 +135,7 @@ export const commitMultipleFilesToGithub = async (
       `${GITHUB_API}/repos/${owner}/${repo}/git/refs/heads/${TARGET_BRANCH}`,
       {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${githubAccessToken}` },
         body: JSON.stringify({ sha: newCommitSha }),
       }
     );
@@ -160,8 +154,8 @@ export const commitMultipleFilesToGithub = async (
         );
         updated.push({
           fileName: figma.root.name,
-          repoUrl,
-          accessToken: token,
+          repoUrl: githubRepoUrl,
+          accessToken: githubAccessToken,
           fileType,
         });
 

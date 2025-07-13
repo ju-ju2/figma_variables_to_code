@@ -4,18 +4,15 @@ import React, {
   useReducer,
   type Dispatch,
 } from "react";
-import {
-  emit,
-  type ActionsType,
-  type Events,
-  type GithubPayload,
-} from "../common/fromPlugin";
+import { emit, type Events } from "../common/fromPlugin";
 import { FIGMA_ACTION, FIGMA_EVENT } from "@/constants/figma";
+import type { FileFormatType } from "@/types/code";
+import type { ActionsType, GithubPayload } from "@/types/plugin";
 
 type Action =
   | {
       name: typeof FIGMA_ACTION.GET_GITHUB_REPO_URL;
-      payload: { githubRepositoryUrl: string };
+      payload: { githubRepoUrl: string };
     }
   | {
       name: typeof FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN;
@@ -37,7 +34,7 @@ type Action =
     }
   | {
       name: typeof FIGMA_ACTION.FILE_TYPE;
-      payload: { fileType: "TS" | "SCSS" };
+      payload: { fileType: FileFormatType };
     };
 
 interface AppContextProps {
@@ -53,7 +50,7 @@ const initStyles: ActionsType = {
 
 // 초기 상태
 const initialState: GithubPayload = {
-  githubRepositoryUrl: "",
+  githubRepoUrl: "",
   githubAccessToken: "",
   styles: {
     localStyles: initStyles,
@@ -71,7 +68,7 @@ function reducer(state: GithubPayload, action: Action) {
     case FIGMA_ACTION.GET_GITHUB_REPO_URL:
       return {
         ...state,
-        githubRepositoryUrl: action.payload.githubRepositoryUrl,
+        githubRepoUrl: action.payload.githubRepoUrl,
       };
     case FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN:
       return {

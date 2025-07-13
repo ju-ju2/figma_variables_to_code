@@ -1,8 +1,10 @@
 import { ROOT_FILE_PATH } from "@/constants/github";
 import { getLocalStyles } from "./localStyles";
 import { getVariablesStyles } from "./variables";
-import { emit, type ActionsType } from "@/common/fromPlugin";
+import { emit } from "@/common/fromPlugin";
 import { FIGMA_EVENT } from "@/constants/figma";
+import type { ActionsType } from "@/types/plugin";
+import type { FileFormatType } from "@/types/code";
 
 // const findDuplicateVariableNames = (variableStrings: string[]) => {
 //   const nameSet = new Set();
@@ -56,7 +58,7 @@ import { FIGMA_EVENT } from "@/constants/figma";
 const styleLintCode =
   "/* stylelint-disable color-hex-length */\n/* stylelint-disable length-zero-no-unit */\n/* stylelint-disable scss/dollar-variable-pattern */";
 
-export const getStyles = async (fileType: "SCSS" | "TS") => {
+export const getStyles = async (fileType: FileFormatType) => {
   const localStyles = await getLocalStyles(fileType);
   const variableStyles = await getVariablesStyles(fileType);
   const filePath = `${ROOT_FILE_PATH}/localStyles/${

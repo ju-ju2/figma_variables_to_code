@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 
 const PullRequest = () => {
   const { state, dispatch } = useAppState();
-  console.log("🚀 ~ PullRequest ~ state:", state);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMergeRequest = () => {
@@ -57,10 +56,10 @@ const PullRequest = () => {
         onChange={(e) => {
           dispatch({
             name: FIGMA_ACTION.GET_GITHUB_REPO_URL,
-            payload: { githubRepositoryUrl: e.target.value },
+            payload: { githubRepoUrl: e.target.value },
           });
         }}
-        value={state.githubRepositoryUrl}
+        value={state.githubRepoUrl}
       />
       <Label htmlFor="token">
         Github Access Token<span className="text-red-400">*</span>
@@ -154,9 +153,7 @@ const PullRequest = () => {
       <Button
         className="mt-auto"
         onClick={handleMergeRequest}
-        disabled={
-          !state.githubRepositoryUrl || !state.githubAccessToken || isLoading
-        }
+        disabled={!state.githubRepoUrl || !state.githubAccessToken || isLoading}
       >
         {isLoading && <Loader2Icon className="animate-spin" />}
         Pull Request

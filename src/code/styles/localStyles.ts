@@ -1,3 +1,4 @@
+import type { FileFormatType } from "@/types/code";
 import { toCamelCase } from "../shared";
 
 type LineHeightType = {
@@ -76,9 +77,7 @@ type LineHeightType = {
 //     });
 // };
 
-type FormatType = "SCSS" | "TS";
-
-const getFontStyles = async (format: FormatType) => {
+const getFontStyles = async (format: FileFormatType) => {
   const textStyles = await figma.getLocalTextStylesAsync();
   if (textStyles.length === 0) return [];
 
@@ -109,47 +108,49 @@ const getFontStyles = async (format: FormatType) => {
     });
   }
 
-  // TS 형식
-  const classNames: string[] = [];
+  if (format === "TS") {
+    // TS 형식
+    const classNames: string[] = [];
 
-  const styleStrings = textStyles.map((textStyle) => {
-    const className = toCamelCase(textStyle.name);
-    classNames.push(className);
+    const styleStrings = textStyles.map((textStyle) => {
+      const className = toCamelCase(textStyle.name);
+      classNames.push(className);
 
-    const fontFamily = textStyle.fontName.family;
-    const fontSize = textStyle.fontSize;
-    const fontWeight = textStyle.fontName.style.toLowerCase();
-    const lineHeight = (textStyle.lineHeight as LineHeightType).value;
+      const fontFamily = textStyle.fontName.family;
+      const fontSize = textStyle.fontSize;
+      const fontWeight = textStyle.fontName.style.toLowerCase();
+      const lineHeight = (textStyle.lineHeight as LineHeightType).value;
 
-    const rawLetterSpacing = textStyle.letterSpacing.value;
-    const letterSpacing = parseFloat(
-      (fontSize * (rawLetterSpacing / 100)).toFixed(2)
-    );
+      const rawLetterSpacing = textStyle.letterSpacing.value;
+      const letterSpacing = parseFloat(
+        (fontSize * (rawLetterSpacing / 100)).toFixed(2)
+      );
 
-    return `const ${className} = {
-  fontFamily: "${fontFamily}",
+      return `export const ${className} = {
+  fontFamily: '${fontFamily}',
   fontSize: ${fontSize},
-  fontWeight: "${fontWeight}",
+  fontWeight: '${fontWeight}',
   lineHeight: ${lineHeight},
   letterSpacing: ${letterSpacing},
 };`;
-  });
+    });
 
-  const exportBlock = `\nexport const fontStyle = {\n  ${classNames.join(
-    ",\n  "
-  )}\n};`;
+    const exportBlock = `\nexport const fontStyle = {\n  ${classNames.join(
+      ",\n  "
+    )},\n};`;
 
-  const exportTypeBlock = `export type FontStyleType = keyof typeof fontStyle;`;
-  return [...styleStrings, exportBlock, exportTypeBlock];
+    const exportTypeBlock = `export type FontStyleType = keyof typeof fontStyle;\n`;
+    return [...styleStrings, exportBlock, exportTypeBlock];
+  }
 };
 
-export const getLocalStyles = async (format: FormatType) => {
+export const getLocalStyles = async (format: FileFormatType) => {
   // const colors = await getColor();
   // const shadows = await getShadows();
   // const blurs = await getBlurs();
   const fontStyles = await getFontStyles(format);
 
   // const localStyles = [...colors, ...shadows, ...blurs, ...fontStyles];
-  const localStyles = [...fontStyles];
+  const localStyles = [...(fontStyles ?? [])];
   return localStyles;
 };

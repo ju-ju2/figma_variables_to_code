@@ -1,52 +1,6 @@
 import type { FIGMA_EVENT } from "@/constants/figma";
+import type { GithubPayload, StylesPayload } from "@/types/plugin";
 import { emit as e, on as o } from "@create-figma-plugin/utilities";
-
-export type GithubPayload = GetGithubRepoUrlPayload &
-  GetGithubAccessTokenPayload &
-  GetStylesPayload &
-  GetCommitTitlePayload &
-  GetBaseBranchPayload &
-  IsRememberInfoPayload &
-  FileType;
-
-export interface GetGithubRepoUrlPayload {
-  githubRepositoryUrl: string;
-}
-
-export interface GetGithubAccessTokenPayload {
-  githubAccessToken: string;
-}
-
-export interface ActionsType {
-  action: string;
-  file_path: string;
-  content: string;
-}
-
-export interface StylesType {
-  localStyles: ActionsType;
-  variables: ActionsType[];
-}
-
-export interface GetStylesPayload {
-  styles: StylesType;
-}
-
-interface GetCommitTitlePayload {
-  commitTitle: string;
-}
-
-interface GetBaseBranchPayload {
-  baseBranch: string;
-}
-
-interface IsRememberInfoPayload {
-  isRememberInfo?: boolean;
-}
-
-interface FileType {
-  fileType: "TS" | "SCSS";
-}
 
 export type Events = {
   PULL_REQUEST_STYLES: {
@@ -57,8 +11,8 @@ export type Events = {
 
   GET_STYLES_PREVIEW: {
     name: typeof FIGMA_EVENT.GET_STYLES_PREVIEW;
-    payload: GetStylesPayload;
-    handler: (props: GetStylesPayload) => void;
+    payload: StylesPayload;
+    handler: (props: StylesPayload) => void;
   };
 };
 

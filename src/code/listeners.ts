@@ -6,7 +6,7 @@ export function listenDeployStyles() {
   on(
     FIGMA_EVENT.PULL_REQUEST_STYLES,
     async ({
-      githubRepositoryUrl,
+      githubRepoUrl,
       githubAccessToken,
       commitTitle,
       styles,
@@ -17,15 +17,15 @@ export function listenDeployStyles() {
       try {
         figma.ui.postMessage({ type: FIGMA_MESSAGE.LOADING_START });
 
-        const result = await commitMultipleFilesToGithub(
-          githubRepositoryUrl,
+        const result = await commitMultipleFilesToGithub({
+          githubRepoUrl,
           githubAccessToken,
           commitTitle,
           styles,
           baseBranch,
           fileType,
-          isRememberInfo
-        );
+          isRememberInfo,
+        });
 
         figma.ui.postMessage({ type: FIGMA_MESSAGE.LOADING_END });
 

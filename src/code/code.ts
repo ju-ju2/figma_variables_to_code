@@ -1,6 +1,6 @@
 import { FIGMA_STORAGE, FIGMA_MESSAGE } from "@/constants/figma";
-import type { RepoInfoType } from "./github";
 import { listenDeployStyles } from "./listeners";
+import type { RepoInfoType } from "@/types/code";
 
 const initRepoInfo: RepoInfoType = {
   accessToken: "",
