@@ -45,6 +45,10 @@ function App() {
           name: FIGMA_ACTION.IS_REMEMBER_API_KEY,
           payload: { isRememberInfo: message.payload.accessToken !== "" },
         });
+        dispatch({
+          name: FIGMA_ACTION.FILE_TYPE,
+          payload: { fileType: message.payload.fileType },
+        });
       }
     };
 

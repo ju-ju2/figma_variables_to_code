@@ -1,21 +1,25 @@
 import { FIGMA_STORAGE } from "@/constants/figma";
-import type { ActionsType, ScssType } from "../common/fromPlugin";
+import type { ActionsType, StylesType } from "../common/fromPlugin";
 import { TARGET_BRANCH, COMMIT_TITLE, BASE_BRANCH } from "../constants/github";
+import { getStyles } from "./styles";
 
-export type repoInfoType = {
+export type RepoInfoType = {
   fileName: string;
   repoUrl: string;
   accessToken: string;
+  fileType: "TS" | "SCSS";
 };
 
 export const commitMultipleFilesToGithub = async (
   repoUrl: string,
   token: string,
   commitMessage: string,
-  scss: ScssType,
+  styles: StylesType,
   baseBranch: string,
+  fileType: "TS" | "SCSS",
   isRememberInfo?: boolean
 ) => {
+  getStyles(fileType);
   const GITHUB_API = "https://api.github.com";
   const [owner, repo] = repoUrl.split("/").slice(-2);
 
@@ -87,10 +91,10 @@ export const commitMultipleFilesToGithub = async (
     const baseTreeSha = commitData.tree.sha;
     console.log("✅ 트리 SHA:", baseTreeSha);
 
-    // ✅ Step 5: 새로운 트리 생성 (SCSS 파일들)
-    const files: ActionsType[] = [scss.localStyles, ...scss.variables];
+    // ✅ Step 5: 새로운 트리 생성
+    const files: ActionsType[] = [styles.localStyles, ...styles.variables];
     const tree = files.map((file) => ({
-      path: `${file.file_path}.scss`,
+      path: file.file_path,
       mode: "100644",
       type: "blob",
       content: file.content,
@@ -148,7 +152,7 @@ export const commitMultipleFilesToGithub = async (
     // ✅ Step 8: 저장 로직 유지
     const setRepoInfo = async () => {
       try {
-        const existing: repoInfoType[] =
+        const existing: RepoInfoType[] =
           (await figma.clientStorage.getAsync(FIGMA_STORAGE.REPO_INFO)) ?? [];
 
         const updated = existing.filter(
@@ -158,6 +162,7 @@ export const commitMultipleFilesToGithub = async (
           fileName: figma.root.name,
           repoUrl,
           accessToken: token,
+          fileType,
         });
 
         if (updated.length > 10) updated.shift();
@@ -169,7 +174,7 @@ export const commitMultipleFilesToGithub = async (
 
     const deleteRepoInfo = async () => {
       try {
-        const existing: repoInfoType[] =
+        const existing: RepoInfoType[] =
           (await figma.clientStorage.getAsync(FIGMA_STORAGE.REPO_INFO)) ?? [];
 
         const updated = existing.filter((item) => {

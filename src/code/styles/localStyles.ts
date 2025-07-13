@@ -1,4 +1,4 @@
-// import { rgbaToHex } from "./shared";
+import { toCamelCase } from "../shared";
 
 type LineHeightType = {
   readonly value: number;
@@ -76,45 +76,78 @@ type LineHeightType = {
 //     });
 // };
 
-async function getFontStyles() {
+type FormatType = "SCSS" | "TS";
+
+const getFontStyles = async (format: FormatType) => {
   const textStyles = await figma.getLocalTextStylesAsync();
+  if (textStyles.length === 0) return [];
 
-  return textStyles.map((textStyle) => {
-    const className = textStyle.name.split("/")[0];
-
-    const getFontWeight = () => {
+  if (format === "SCSS") {
+    return textStyles.map((textStyle) => {
+      const className = textStyle.name.split("/")[0];
+      const fontFamily = textStyle.fontName.family;
+      const fontSize = textStyle.fontSize;
       const fontWeight = textStyle.fontName.style.toLowerCase();
-      if (fontWeight === "bold") {
-        return 700;
-      } else if (fontWeight === "semibold") {
-        return 600;
-      } else if (fontWeight === "medium") {
-        return 500;
-      } else if (fontWeight === "regular") {
-        return 400;
-      } else {
-        return 400;
-      }
-    };
+      const lineHeight = (textStyle.lineHeight as LineHeightType).value;
+      const letterSpacing = parseFloat(
+        textStyle.letterSpacing.value.toFixed(2)
+      );
+      const fontWeightValue =
+        {
+          bold: 700,
+          semibold: 600,
+          medium: 500,
+          regular: 400,
+        }[fontWeight] ?? 400;
 
-    return `  "${className}-family": "${textStyle.fontName.family}",
-  "${className}-size": ${textStyle.fontSize}px, 
-  "${className}-weight": ${getFontWeight()},
-  "${className}-line-height": ${
-      (textStyle.lineHeight as LineHeightType).value
-    }px,
-  "${className}-letter-spacing": ${parseFloat(
-      textStyle.letterSpacing.value.toFixed(2)
-    )}%,
+      return `  "${className}-family": "${fontFamily}",
+  "${className}-size": ${fontSize}px, 
+  "${className}-weight": ${fontWeightValue},
+  "${className}-line-height": ${lineHeight}px,
+  "${className}-letter-spacing": ${letterSpacing}%,
 `;
-  });
-}
+    });
+  }
 
-export const getLocalStyles = async () => {
+  // TS 형식
+  const classNames: string[] = [];
+
+  const styleStrings = textStyles.map((textStyle) => {
+    const className = toCamelCase(textStyle.name);
+    classNames.push(className);
+
+    const fontFamily = textStyle.fontName.family;
+    const fontSize = textStyle.fontSize;
+    const fontWeight = textStyle.fontName.style.toLowerCase();
+    const lineHeight = (textStyle.lineHeight as LineHeightType).value;
+
+    const rawLetterSpacing = textStyle.letterSpacing.value;
+    const letterSpacing = parseFloat(
+      (fontSize * (rawLetterSpacing / 100)).toFixed(2)
+    );
+
+    return `const ${className} = {
+  fontFamily: "${fontFamily}",
+  fontSize: ${fontSize},
+  fontWeight: "${fontWeight}",
+  lineHeight: ${lineHeight},
+  letterSpacing: ${letterSpacing},
+};`;
+  });
+
+  const exportBlock = `\nexport const fontStyle = {\n  ${classNames.join(
+    ",\n  "
+  )}\n};`;
+
+  const exportTypeBlock = `export type FontStyleType = keyof typeof fontStyle;`;
+  return [...styleStrings, exportBlock, exportTypeBlock];
+};
+
+export const getLocalStyles = async (format: FormatType) => {
   // const colors = await getColor();
   // const shadows = await getShadows();
   // const blurs = await getBlurs();
-  const fontStyles = await getFontStyles();
+  const fontStyles = await getFontStyles(format);
 
   // const localStyles = [...colors, ...shadows, ...blurs, ...fontStyles];
   const localStyles = [...fontStyles];

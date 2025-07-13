@@ -3,10 +3,11 @@ import { emit as e, on as o } from "@create-figma-plugin/utilities";
 
 export type GithubPayload = GetGithubRepoUrlPayload &
   GetGithubAccessTokenPayload &
-  GetScssPayload &
+  GetStylesPayload &
   GetCommitTitlePayload &
   GetBaseBranchPayload &
-  IsRememberInfoPayload;
+  IsRememberInfoPayload &
+  FileType;
 
 export interface GetGithubRepoUrlPayload {
   githubRepositoryUrl: string;
@@ -22,13 +23,13 @@ export interface ActionsType {
   content: string;
 }
 
-export interface ScssType {
+export interface StylesType {
   localStyles: ActionsType;
   variables: ActionsType[];
 }
 
-export interface GetScssPayload {
-  scss: ScssType;
+export interface GetStylesPayload {
+  styles: StylesType;
 }
 
 interface GetCommitTitlePayload {
@@ -43,17 +44,21 @@ interface IsRememberInfoPayload {
   isRememberInfo?: boolean;
 }
 
+interface FileType {
+  fileType: "TS" | "SCSS";
+}
+
 export type Events = {
-  PULL_REQUEST_SCSS: {
-    name: typeof FIGMA_EVENT.PULL_REQUEST_SCSS;
+  PULL_REQUEST_STYLES: {
+    name: typeof FIGMA_EVENT.PULL_REQUEST_STYLES;
     payload: GithubPayload;
     handler: (props: GithubPayload) => void;
   };
 
-  GET_SCSS_PREVIEW: {
-    name: typeof FIGMA_EVENT.GET_SCSS_PREVIEW;
-    payload: GetScssPayload;
-    handler: (props: GetScssPayload) => void;
+  GET_STYLES_PREVIEW: {
+    name: typeof FIGMA_EVENT.GET_STYLES_PREVIEW;
+    payload: GetStylesPayload;
+    handler: (props: GetStylesPayload) => void;
   };
 };
 

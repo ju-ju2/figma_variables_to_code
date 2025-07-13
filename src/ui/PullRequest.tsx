@@ -10,11 +10,12 @@ import { useEffect, useState } from "react";
 
 const PullRequest = () => {
   const { state, dispatch } = useAppState();
+  console.log("🚀 ~ PullRequest ~ state:", state);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMergeRequest = () => {
     dispatch({
-      name: FIGMA_EVENT.PULL_REQUEST_SCSS,
+      name: FIGMA_EVENT.PULL_REQUEST_STYLES,
       payload: {
         ...state,
       },
@@ -77,7 +78,44 @@ const PullRequest = () => {
         }}
         value={state.githubAccessToken}
       />
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4">
+        <Label>Type</Label>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="type"
+              value="ts"
+              checked={state.fileType === "TS"}
+              onChange={() => {
+                dispatch({
+                  name: FIGMA_ACTION.FILE_TYPE,
+                  payload: { fileType: "TS" },
+                });
+              }}
+              className="form-radio h-4 w-4 accent-primary"
+            />
+            <span className="text-gray-800 text-sm">TS</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="type"
+              value="scss"
+              checked={state.fileType === "SCSS"}
+              onChange={() => {
+                dispatch({
+                  name: FIGMA_ACTION.FILE_TYPE,
+                  payload: { fileType: "SCSS" },
+                });
+              }}
+              className="form-radio h-4 w-4 accent-primary"
+            />
+            <span className="text-gray-800 text-sm">SCSS</span>
+          </label>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 mt-1">
         <Checkbox
           id="remember"
           checked={state.isRememberInfo}
@@ -90,7 +128,7 @@ const PullRequest = () => {
         />
         <Label htmlFor="remember">Remember information</Label>
       </div>
-      <hr className="border-gray-300 my-2" />
+      <hr className="border-gray-300 my-1" />
       <Label htmlFor="commit">Commit Title</Label>
       <Input
         id="commit"

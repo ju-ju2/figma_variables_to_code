@@ -2,15 +2,16 @@ import { FIGMA_EVENT, FIGMA_MESSAGE } from "@/constants/figma";
 import { on } from "../common/fromPlugin";
 import { commitMultipleFilesToGithub } from "./github";
 
-export function listenDeployScss() {
+export function listenDeployStyles() {
   on(
-    FIGMA_EVENT.PULL_REQUEST_SCSS,
+    FIGMA_EVENT.PULL_REQUEST_STYLES,
     async ({
       githubRepositoryUrl,
       githubAccessToken,
       commitTitle,
-      scss,
+      styles,
       baseBranch,
+      fileType,
       isRememberInfo,
     }) => {
       try {
@@ -20,8 +21,9 @@ export function listenDeployScss() {
           githubRepositoryUrl,
           githubAccessToken,
           commitTitle,
-          scss,
+          styles,
           baseBranch,
+          fileType,
           isRememberInfo
         );
 

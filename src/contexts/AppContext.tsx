@@ -21,8 +21,8 @@ type Action =
       name: typeof FIGMA_ACTION.GET_GITHUB_ACCESS_TOKEN;
       payload: { githubAccessToken: string };
     }
-  | Omit<Events[typeof FIGMA_EVENT.PULL_REQUEST_SCSS], "handler">
-  | Omit<Events[typeof FIGMA_EVENT.GET_SCSS_PREVIEW], "handler">
+  | Omit<Events[typeof FIGMA_EVENT.PULL_REQUEST_STYLES], "handler">
+  | Omit<Events[typeof FIGMA_EVENT.GET_STYLES_PREVIEW], "handler">
   | {
       name: typeof FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE;
       payload: { commitTitle: string };
@@ -34,6 +34,10 @@ type Action =
   | {
       name: typeof FIGMA_ACTION.IS_REMEMBER_API_KEY;
       payload: { isRememberInfo: boolean };
+    }
+  | {
+      name: typeof FIGMA_ACTION.FILE_TYPE;
+      payload: { fileType: "TS" | "SCSS" };
     };
 
 interface AppContextProps {
@@ -41,7 +45,7 @@ interface AppContextProps {
   dispatch: Dispatch<Action>;
 }
 
-const initScss: ActionsType = {
+const initStyles: ActionsType = {
   action: "",
   file_path: "",
   content: "",
@@ -51,13 +55,14 @@ const initScss: ActionsType = {
 const initialState: GithubPayload = {
   githubRepositoryUrl: "",
   githubAccessToken: "",
-  scss: {
-    localStyles: initScss,
-    variables: [initScss],
+  styles: {
+    localStyles: initStyles,
+    variables: [initStyles],
   },
   commitTitle: "",
   baseBranch: "",
   isRememberInfo: false,
+  fileType: "TS", // 기본값 설정
 };
 
 // 리듀서 함수
@@ -73,18 +78,18 @@ function reducer(state: GithubPayload, action: Action) {
         ...state,
         githubAccessToken: action.payload.githubAccessToken,
       };
-    case FIGMA_EVENT.PULL_REQUEST_SCSS:
-      emit(FIGMA_EVENT.PULL_REQUEST_SCSS, {
+    case FIGMA_EVENT.PULL_REQUEST_STYLES:
+      emit(FIGMA_EVENT.PULL_REQUEST_STYLES, {
         ...action.payload,
-        scss: state.scss,
+        styles: state.styles,
       });
       return {
         ...state,
       };
-    case FIGMA_EVENT.GET_SCSS_PREVIEW:
+    case FIGMA_EVENT.GET_STYLES_PREVIEW:
       return {
         ...state,
-        scss: action.payload.scss,
+        styles: action.payload.styles,
       };
     case FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE:
       return {
@@ -100,6 +105,11 @@ function reducer(state: GithubPayload, action: Action) {
       return {
         ...state,
         isRememberInfo: action.payload.isRememberInfo,
+      };
+    case FIGMA_ACTION.FILE_TYPE:
+      return {
+        ...state,
+        fileType: action.payload.fileType,
       };
     default:
       throw new Error();
