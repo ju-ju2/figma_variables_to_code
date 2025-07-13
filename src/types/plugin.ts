@@ -2,7 +2,6 @@ import type { FileFormatType } from "./code";
 
 export type GithubPayload = GithubRepoUrlPayload &
   GithubAccessTokenPayload &
-  StylesPayload &
   CommitTitlePayload &
   BaseBranchPayload &
   IsRememberInfoPayload &
@@ -25,10 +24,6 @@ export interface ActionsType {
 export interface StylesType {
   localStyles: ActionsType;
   variables: ActionsType[];
-}
-
-export interface StylesPayload {
-  styles: StylesType;
 }
 
 interface CommitTitlePayload {

@@ -1,19 +1,17 @@
 import { FIGMA_STORAGE } from "@/constants/figma";
 import { TARGET_BRANCH, COMMIT_TITLE, BASE_BRANCH } from "../constants/github";
-import { getStyles } from "./styles";
 import type { ActionsType, GithubPayload } from "@/types/plugin";
 import type { RepoInfoType } from "@/types/code";
+import { getStyles } from "./styles";
 
 export const commitMultipleFilesToGithub = async ({
   githubRepoUrl,
   githubAccessToken,
   commitTitle,
-  styles,
   baseBranch,
   fileType,
   isRememberInfo,
 }: GithubPayload) => {
-  await getStyles(fileType);
   const GITHUB_API = "https://api.github.com";
   const [owner, repo] = githubRepoUrl.split("/").slice(-2);
 
@@ -27,7 +25,16 @@ export const commitMultipleFilesToGithub = async ({
         headers: { Authorization: `Bearer ${githubAccessToken}` },
       }
     );
-    if (!baseRefRes.ok) throw new Error("❌ 기준 브랜치 정보 조회 실패");
+
+    if (!baseRefRes.ok) {
+      const errorText = await baseRefRes.text();
+      console.error(
+        "❌ 기준 브랜치 정보 조회 실패:",
+        baseRefRes.status,
+        errorText
+      );
+      throw new Error(`❌ 기준 브랜치 정보 조회 실패`);
+    }
 
     const baseRefData = await baseRefRes.json();
     const baseCommitSha = baseRefData.object.sha;
@@ -52,10 +59,17 @@ export const commitMultipleFilesToGithub = async ({
           }),
         }
       );
+
       if (!createBranchRes.ok) {
-        const err = await createBranchRes.json();
-        throw new Error("❌ 새 브랜치 생성 실패: " + JSON.stringify(err));
+        const errorText = await createBranchRes.text();
+        console.error(
+          "❌ 새 브랜치 생성 실패:",
+          createBranchRes.status,
+          errorText
+        );
+        throw new Error(`❌ 새 브랜치 생성 실패`);
       }
+
       console.log("✅ 새 브랜치 생성 완료:", TARGET_BRANCH);
     } else {
       console.log("⚠️ 브랜치 이미 존재함:", TARGET_BRANCH);
@@ -68,7 +82,12 @@ export const commitMultipleFilesToGithub = async ({
         headers: { Authorization: `Bearer ${githubAccessToken}` },
       }
     );
-    if (!refRes.ok) throw new Error("❌ 대상 브랜치 SHA 조회 실패");
+
+    if (!refRes.ok) {
+      const errorText = await refRes.text();
+      console.error("❌ 대상 브랜치 SHA 조회 실패:", refRes.status, errorText);
+      throw new Error(`❌ 대상 브랜치 SHA 조회 실패`);
+    }
 
     const refData = await refRes.json();
     const latestCommitSha = refData.object.sha;
@@ -81,12 +100,21 @@ export const commitMultipleFilesToGithub = async ({
         headers: { Authorization: `Bearer ${githubAccessToken}` },
       }
     );
+
+    if (!commitRes.ok) {
+      const errorText = await commitRes.text();
+      console.error("❌ tree SHA 추출 실패:", commitRes.status, errorText);
+      throw new Error(`❌ tree SHA 추출 실패`);
+    }
+
     const commitData = await commitRes.json();
     const baseTreeSha = commitData.tree.sha;
     console.log("✅ 트리 SHA:", baseTreeSha);
 
     // ✅ Step 5: 새로운 트리 생성
+    const styles = await getStyles(fileType);
     const files: ActionsType[] = [styles.localStyles, ...styles.variables];
+    console.log("🚀 ~ files:", files);
     const tree = files.map((file) => ({
       path: file.file_path,
       mode: "100644",
@@ -105,7 +133,12 @@ export const commitMultipleFilesToGithub = async ({
         }),
       }
     );
-    if (!treeRes.ok) throw new Error("❌ 트리 생성 실패");
+
+    if (!treeRes.ok) {
+      const errorText = await treeRes.text();
+      console.error("❌ 트리 생성 실패:", treeRes.status, errorText);
+      throw new Error(`❌ 트리 생성 실패`);
+    }
 
     const treeData = await treeRes.json();
     const newTreeSha = treeData.sha;
@@ -124,7 +157,12 @@ export const commitMultipleFilesToGithub = async ({
         }),
       }
     );
-    if (!commitCreateRes.ok) throw new Error("❌ 커밋 생성 실패");
+
+    if (!commitCreateRes.ok) {
+      const errorText = await commitCreateRes.text();
+      console.error("❌ 커밋 생성 실패:", commitCreateRes.status, errorText);
+      throw new Error(`❌ 커밋 생성 실패`);
+    }
 
     const newCommit = await commitCreateRes.json();
     const newCommitSha = newCommit.sha;
@@ -139,7 +177,16 @@ export const commitMultipleFilesToGithub = async ({
         body: JSON.stringify({ sha: newCommitSha }),
       }
     );
-    if (!updateRes.ok) throw new Error("❌ 브랜치 HEAD 업데이트 실패");
+
+    if (!updateRes.ok) {
+      const errorText = await updateRes.text();
+      console.error(
+        "❌ 브랜치 HEAD 업데이트 실패:",
+        updateRes.status,
+        errorText
+      );
+      throw new Error(`❌ 브랜치 HEAD 업데이트 실패`);
+    }
 
     console.log("✅ 브랜치 HEAD 업데이트 완료");
 

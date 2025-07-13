@@ -1,5 +1,5 @@
 import type { FIGMA_EVENT } from "@/constants/figma";
-import type { GithubPayload, StylesPayload } from "@/types/plugin";
+import type { GithubPayload } from "@/types/plugin";
 import { emit as e, on as o } from "@create-figma-plugin/utilities";
 
 export type Events = {
@@ -7,12 +7,6 @@ export type Events = {
     name: typeof FIGMA_EVENT.PULL_REQUEST_STYLES;
     payload: GithubPayload;
     handler: (props: GithubPayload) => void;
-  };
-
-  GET_STYLES_PREVIEW: {
-    name: typeof FIGMA_EVENT.GET_STYLES_PREVIEW;
-    payload: StylesPayload;
-    handler: (props: StylesPayload) => void;
   };
 };
 

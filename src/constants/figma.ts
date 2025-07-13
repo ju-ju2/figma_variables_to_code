@@ -9,7 +9,6 @@ export const FIGMA_ACTION = {
 
 export const FIGMA_EVENT = {
   PULL_REQUEST_STYLES: "PULL_REQUEST_STYLES",
-  GET_STYLES_PREVIEW: "GET_STYLES_PREVIEW",
 } as const;
 
 export const FIGMA_MESSAGE = {

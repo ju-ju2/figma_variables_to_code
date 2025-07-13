@@ -1,8 +1,6 @@
 import { ROOT_FILE_PATH } from "@/constants/github";
 import { getLocalStyles } from "./localStyles";
 import { getVariablesStyles } from "./variables";
-import { emit } from "@/common/fromPlugin";
-import { FIGMA_EVENT } from "@/constants/figma";
 import type { ActionsType } from "@/types/plugin";
 import type { FileFormatType } from "@/types/code";
 
@@ -74,10 +72,8 @@ export const getStyles = async (fileType: FileFormatType) => {
         : `${localStyles.join("\n")}`,
   };
 
-  emit(FIGMA_EVENT.GET_STYLES_PREVIEW, {
-    styles: {
-      localStyles: localStylesAction,
-      variables: variableStyles.actions,
-    },
-  });
+  return {
+    localStyles: localStylesAction,
+    variables: variableStyles.actions,
+  };
 };

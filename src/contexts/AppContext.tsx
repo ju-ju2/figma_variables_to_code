@@ -7,7 +7,7 @@ import React, {
 import { emit, type Events } from "../common/fromPlugin";
 import { FIGMA_ACTION, FIGMA_EVENT } from "@/constants/figma";
 import type { FileFormatType } from "@/types/code";
-import type { ActionsType, GithubPayload } from "@/types/plugin";
+import type { GithubPayload } from "@/types/plugin";
 
 type Action =
   | {
@@ -19,7 +19,6 @@ type Action =
       payload: { githubAccessToken: string };
     }
   | Omit<Events[typeof FIGMA_EVENT.PULL_REQUEST_STYLES], "handler">
-  | Omit<Events[typeof FIGMA_EVENT.GET_STYLES_PREVIEW], "handler">
   | {
       name: typeof FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE;
       payload: { commitTitle: string };
@@ -42,20 +41,10 @@ interface AppContextProps {
   dispatch: Dispatch<Action>;
 }
 
-const initStyles: ActionsType = {
-  action: "",
-  file_path: "",
-  content: "",
-};
-
 // 초기 상태
 const initialState: GithubPayload = {
   githubRepoUrl: "",
   githubAccessToken: "",
-  styles: {
-    localStyles: initStyles,
-    variables: [initStyles],
-  },
   commitTitle: "",
   baseBranch: "",
   isRememberInfo: false,
@@ -78,15 +67,9 @@ function reducer(state: GithubPayload, action: Action) {
     case FIGMA_EVENT.PULL_REQUEST_STYLES:
       emit(FIGMA_EVENT.PULL_REQUEST_STYLES, {
         ...action.payload,
-        styles: state.styles,
       });
       return {
         ...state,
-      };
-    case FIGMA_EVENT.GET_STYLES_PREVIEW:
-      return {
-        ...state,
-        styles: action.payload.styles,
       };
     case FIGMA_ACTION.GET_GITHUB_COMMIT_TITLE:
       return {
