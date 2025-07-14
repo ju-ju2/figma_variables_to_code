@@ -19,7 +19,7 @@ export const emit = <T extends EventName>(
   return e(name, payload);
 };
 
-export const on = <T extends keyof Events>(
+export const on = <T extends EventName>(
   name: T,
   handler: Events[T]["handler"]
 ) => {

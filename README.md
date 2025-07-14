@@ -1,5 +1,7 @@
 # ✨ Variables-to-Code Figma Plugin
 
+<img width="451" height="579" alt="Image" src="https://github.com/user-attachments/assets/c69eedeb-8682-471f-b451-11a6a51b6251" />.
+
 Figma 스타일과 변수를 SCSS 또는 TypeScript 형식으로 변환하여 GitHub 저장소에 커밋하는 플러그인입니다.
 
 ## 🚀 주요 기능
