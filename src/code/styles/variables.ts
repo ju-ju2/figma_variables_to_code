@@ -83,14 +83,23 @@ export const getVariablesStyles = async (format: FileFormatType) => {
       const r = Math.round(value.r * 255);
       const g = Math.round(value.g * 255);
       const b = Math.round(value.b * 255);
+      // 핵스 코드로 변환하는 로직
+      // const a =
+      //   "a" in value && typeof value.a === "number"
+      //     ? Math.round(value.a * 255)
+      //     : 255;
+      // const hex = [r, g, b, a]
+      //   .map((n) => n.toString(16).padStart(2, "0"))
+      //   .join("");
+      // return format === "SCSS" ? `#${hex}` : `'#${hex}'`;
+
+      // RGBA 값으로 변환
       const a =
-        "a" in value && typeof value.a === "number"
-          ? Math.round(value.a * 255)
-          : 255;
-      const hex = [r, g, b, a]
-        .map((n) => n.toString(16).padStart(2, "0"))
-        .join("");
-      return format === "SCSS" ? `#${hex}` : `'#${hex}'`;
+        "a" in value && typeof value.a === "number" ? value.a.toFixed(2) : 1;
+
+      return format === "SCSS"
+        ? `rgba(${r}, ${g}, ${b}, ${a})`
+        : `'rgba(${r}, ${g}, ${b}, ${a})'`;
     }
 
     if (typeof value === "number") {
